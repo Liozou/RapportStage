@@ -1,0 +1,117 @@
+
+#+TITLE: Conception et implémentation d'une machine abstraite pour HOcore
+#+AUTHOR: Lionel Zoubritzky
+
+#+LATEX_CLASS: article
+#+LATEX_COMPILER: pdflatex
+#+LATEX_HEADER: \usepackage{stmaryrd}
+#+LATEX_HEADER: \usepackage{geometry}
+#+LATEX_HEADER: \usepackage{biblatex}
+#+LATEX_HEADER: \usepackage[french]{babel}
+#+LaTeX_HEADER: \bibliography{rapport}
+
+#+BEGIN_LATEX
+\newcommand{\send}[2]{\bar{#1}\left\langle #2\right\rangle}
+\newcommand{\get}[2]{#1.\left( #2\right)}
+\newcommand{\prog}[1]{\left\{ \begin{array}{l}#1\end{array} \right\}}
+\newcommand{\block}[1]{\left[#1\right]}
+\renewcommand{\empty}{\left[\,\right]}
+\newcommand{\paren}[1]{\left(#1\right)}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\len}{\text{len}}
+\newcommand{\env}{\text{env}}
+\newcommand{\size}{\text{size}}
+\newcommand{\level}{\text{Level}}
+\newcommand{\machine}[1]{\left\llbracket{#1}\right\rrbracket_{\mathcal{M}}}
+\newcommand{\new}[1]{\left\llbracket{#1}\right\rrbracket_{\mathcal{A}}}
+\newcommand{\process}[1]{\left\llbracket{#1}\right\rrbracket_{\mathcal{P}}}
+\newcommand{\sizeof}[1]{\text{size}\left(#1\right)}
+\newcounter{c_theo}
+\newcounter{c_def}
+\newcommand{\definition}{\refstepcounter{c_def}
+\textbf{Definition \arabic{c_def}.} }
+\newcommand{\theorem}{\refstepcounter{c_theo}
+\textbf{Theorem \arabic{c_theo}.} }
+\newcommand{\lemma}{\refstepcounter{c_theo}
+\textbf{Lemma \arabic{c_theo}.} }
+\newcommand{\corollary}{\refstepcounter{c_theo}
+\textbf{Corollary \arabic{c_theo}.} }
+\newcommand{\proof}{\textbf{\\Proof of \arabic{c_theo}.} }
+\newcommand{\transmit}[1]{\overset{#1}\longrightarrow}
+\newcommand{\transmitb}[1]{\overset{\left(\overline{#1}\right)}\longrightarrow}
+\newcommand{\transmitn}[1]{\overset{\overline{#1}+}\longrightarrow}
+\newcommand{\transit}[1]{\overset{#1}\rightarrow}
+\newcommand{\io}{\sim_{\texttt{IO}}^\circ}
+\newcommand{\bisim}{\approx_m}
+\newcommand{\stateA}[1]{\left(#1\right)_{\mathcal{A}}}
+#+END_LATEX
+
+* Introduction 1
+Machine abstraite : concept vague (de l'interpréteur à l'architecture),
+ajout d'une mémoire par l'environnement, exécution pas à pas. Globalement:
+modélisation de la sémantique (à définir). (cite Wikipedia) ou autre
+Calcul de processus : parallélisme / concurrence.
+
+
+* TODO HOcore 3
+** TODO Définition 1
+*** TODO Syntaxe 0.6
+*** TODO Réduction 0.4
+Signification de la transmission, exemples (omega)
+** TODO Comparaison avec d'autres calculs 2
+*** TODO \lambda-calcul 1
+Déterminisme, confluence
+*** TODO HO\pi 1
+Ordre supérieur, restriction de nom
+
+
+* TODO Machine abstraite 5.5
+** TODO De la machine de Krivine à HOcore 1.5
+*** TODO Machine de Krivine 0.2
+Déterministe, stratégie d'évaluation fixée. Généralisable
+*** TODO Machine abstraite pour HOcore 0.6
+Non-déterministe
+Transition : opération élémentaire ?
+*** TODO Bonne formation 0.2
+** TODO Correction et complétude 2
+*** TODO Traduction 0.7
+**** TODO Depuis le processus vers la machine 0.2
+**** TODO Depuis la machine vers le processus 0.5
+*** TODO Propriétés requises 0.3
+Deux diagrammes: correction et complétude. Ouvrir sur équité ?
+*** TODO Résumé de la preuve 1
+**** TODO Préservation de la bonne formation 0.2
+**** TODO Équivalence de machines 0.3
+**** TODO Lemme principal 0.3
+**** De la correction à la complétude 0.2
+
+
+* TODO Implémentation 3
+** TODO En OCaml 1.5
+*** TODO Interpréteur 1
+Toutes les réductions / pas-à-pas.
+Problème d'optimisation.
+**** TODO Version naïve 0.2
+**** TODO Regroupement par canal 0.2
+**** TODO Compilation vers une fonction 0.3
+**** TODO Structure de multi-ensemble 0.3
+*** TODO Machine abstraite 0.5
+Module mutuellement récursifs pour les environnements.
+** TODO En HOcore 1.5
+*** TODO Motivations 0.5
+Expressivité du langage.
+Compréhension de HOcore et de la machine.
+*** TODO Éléments de programmation 1
+**** TODO Nombres entiers 0.3
+**** TODO Listes 0.2
+**** TODO Booléens 0.2
+**** TODO Boucles 0.3
+
+
+* TODO Mise en perspective et conclusion 1.5 (dont biblio)
+Formalisation Coq : preuves très détaillées.
+Bisimulation : difficultés.
+Premier pas vers HOpi (ajout de restriction de noms), puis ajout de localités.
+Intérêt : rédaction de preuve, découverte de la concurrence.
+
+\printbibliography
