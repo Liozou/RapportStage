@@ -1,37 +1,27 @@
-% Created 2017-07-27 Thu 17:07
+% Created 2017-07-28 Fri 11:46
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{geometry}
 \usepackage{fixltx2e}
-\usepackage{graphicx}
-\usepackage{longtable}
-\usepackage{float}
-\usepackage{wrapfig}
-\usepackage{rotating}
+\usepackage{setspace}
+\usepackage{soul}
 \usepackage[normalem]{ulem}
+\usepackage{amssymb}
+\usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{textcomp}
-\usepackage{marvosym}
-\usepackage{wasysym}
 \usepackage{amssymb}
 \usepackage{hyperref}
 \tolerance=1000
+\usepackage{aeguill}
 \usepackage{stmaryrd}
-\usepackage{geometry}
-\usepackage{biblatex}
-\usepackage[french, english]{babel}
-\bibliography{rapport}
-\author{Lionel Zoubritzky}
-\date{\today}
-\title{Conception et implémentation d'une machine abstraite pour HOcore}
-\hypersetup{
-  pdfkeywords={},
-  pdfsubject={},
-  pdfcreator={Emacs 25.2.1 (Org mode 8.2.10)}}
-\begin{document}
+\usepackage{natbib}
 
-\maketitle
-\tableofcontents
+\usepackage[english, french]{babel}
+\author{Lionel Zoubritzky}
+\date{Juin - Juillet 2017}
+\title{Conception et implémentation d'une machine abstraite pour HOcore}
 
 \newcommand{\send}[2]{\bar{#1}\left\langle #2\right\rangle}
 \newcommand{\get}[2]{#1.\left( #2\right)}
@@ -51,13 +41,13 @@
 \newcounter{c_theo}
 \newcounter{c_def}
 \newcommand{\definition}{\refstepcounter{c_def}
-\textbf{Definition \arabic{c_def}.} }
+	\textbf{Definition \arabic{c_def}.} }
 \newcommand{\theorem}{\refstepcounter{c_theo}
-\textbf{Theorem \arabic{c_theo}.} }
+	\textbf{Theorem \arabic{c_theo}.} }
 \newcommand{\lemma}{\refstepcounter{c_theo}
-\textbf{Lemma \arabic{c_theo}.} }
+	\textbf{Lemma \arabic{c_theo}.} }
 \newcommand{\corollary}{\refstepcounter{c_theo}
-\textbf{Corollary \arabic{c_theo}.} }
+	\textbf{Corollary \arabic{c_theo}.} }
 \newcommand{\proof}{\textbf{\\Proof of \arabic{c_theo}.} }
 \newcommand{\transmit}[1]{\overset{#1}\longrightarrow}
 \newcommand{\transmitb}[1]{\overset{\left(\overline{#1}\right)}\longrightarrow}
@@ -67,121 +57,194 @@
 \newcommand{\bisim}{\approx_m}
 \newcommand{\stateA}[1]{\left(#1\right)_{\mathcal{A}}}
 
+\begin{document}
+
+\begin{center}
+	\bsc{\'Ecole Normale Supérieure}
+	
+	\bsc{Département d'Informatique}
+	
+	\vspace{0.5cm}
+	
+	\bsc{Rapport de Stage de L3}
+	
+	\vspace{5cm}
+	
+	{\LARGE \bf Conception et Implémentation d'une \\ Machine Abstraite pour HOcore}
+	
+	\vspace{2cm}
+	
+	Lionel \bsc{Zoubritzky}
+	
+	\texttt{lionel.zoubritzky@ens.fr}
+	
+	\vspace{1cm}
+	
+	Juin - Juillet 2017
+	
+	
+	\vspace{1.5cm}
+	
+	\textsl{Dirigé par}
+	
+	Alan \bsc{Schmitt}
+	
+	\vspace{1cm}
+	
+	IRISA / INRIA Rennes
+
+	\bf	
+	NOTES : 
+
+	HO$\pi \to$ X
+	
+	$\lambda$-calcul $\to$ Krivine
+	
+	bonne formation ?
+	
+\end{center}
+
+\clearpage
+\tableofcontents
+\clearpage
+
+
 \section{Introduction 1}
 \label{sec-1}
-Machine abstraite : concept vague (de l'interpréteur à l'architecture),
-ajout d'une mémoire par l'environnement, exécution pas à pas. Globalement:
-modélisation de la sémantique (à définir). (cite Wikipedia) ou autre
-Calcul de processus : parallélisme / concurrence.
+
+Pour étudier les propriétés de programmes ou de langages de programmation, il est souvent nécessaire de les modéliser par des systèmes formels plus faciles à manipuler. 
+Le lien à établir entre ces systèmes formels, comme le $\lambda$-calcul, et le langage étudié, par exemple OCaml, peut être cependant assez éloigné : on a alors recours à des machines abstraites pour fournir une modélisation intermédiaires du système formel, et le rapprocher du fonctionnement de la machine concrète.
+
+La notion de machine abstraite est en soi assez vague, puisqu'elle peut recouvrir des niveaux d'abstractions très divers.
+Parmi les plus connues, on trouve notamment la machine de Turing qui sert de référence dans la théorie de la calculabilité.
+Une liste des machines abstraites conçues pour des langages de programmation explicites est donnée dans \cite{Diehl00}. On peut noter en particulier la \emph{Java Virtual Machine} qui fait partie des plus utilisées puisqu'elle sert de langage intermédiaire lors de la compilation du code Java.
+
+Dans le cadre des langages concurrents, un des objectifs est de pouvoir simuler de façon réaliste la distribution, c'est-à-dire la capacité pour plusieurs unités de calcul indépendantes de pouvoir effectuer des tâches en interne, ou de les communiquer sur un réseau.
+Pour ce faire, plusieurs systèmes formels ont été créés pour les modéliser, qu'on appelle calculs de processus : ils sont en majorité inspiré du Calcul de Système de Communication (on pourra se référer à \cite{Milner82} pour une introduction complète sur ce calcul).
+Tous disposent d'un moyen d'émettre et de recevoir des messages, ce qui, avec une certaine notion de parallélisme, forme le c\oe ur des calculs de processus.
+
+Il existe une machine abstraite très générale pour les calculs de processus, la \emph{Chemical Abstract Machine} \cite{Berry92} qui modélise ces émissions et réceptions de messages par des constituants d'une réaction chimique. Sa généralité lui permet de modéliser plusieurs calculs comme le $\pi$-calcul \cite{Gonthier96} ou le \emph{Distributed Join-Calculus} \cite{Fournet96}.
+Sa nature est cependant très éloignée de l'implémentation qui est faite de ces calculs.
+
+D'autres machines abstraites existent, chacune spécifique à un calcul comme \cite{Bidinger09} pour le $\pi$-calcul, \cite{Sangiorgi01} pour \emph{Safe Ambient} ou \cite{Germain02} pour le M-calcul par exemple.
+
+Le M-calcul est en particulier un calcul d'ordre supérieur, c'est-à-dire que les messages transmis sont eux-mêmes des processus de M-calcul. Ceci modélise la réalité des processus distribués dans lesquels du code exécutable peut-être transmis sur le réseau.
+Le $\pi$-calcul possède aussi un pendant d'ordre supérieur, HO$\pi$\cite{Sangiorgi93}.
+HO$\pi$ ne dispose cependant pas encore de machine abstraite permettant de de le modéliser, alors qu'il s'agit du calcul de processus d'ordre supérieur de référence.
+
+Afin de développer une machine abstraite pour HO$\pi$, j'ai conçu au cours de mon stage une machine abstraite pour HOcore\cite{Lanese08}, un calcul de processus d'ordre supérieur minimal, inspiré de HO$\pi$.
 
 
-\section{{\bfseries\sffamily TODO} HOcore 3}
+
+\section{HOcore 3}
 \label{sec-2}
-\subsection{{\bfseries\sffamily TODO} Définition 1}
+\subsection{Définition 1}
 \label{sec-2-1}
-\subsubsection{{\bfseries\sffamily TODO} Syntaxe 0.6}
+\subsubsection{Syntaxe 0.6}
 \label{sec-2-1-1}
-\subsubsection{{\bfseries\sffamily TODO} Réduction 0.4}
+\subsubsection{Réduction 0.4}
 \label{sec-2-1-2}
 Signification de la transmission, exemples (omega)
-\subsection{{\bfseries\sffamily TODO} Comparaison avec d'autres calculs 2}
+\subsection{Comparaison avec d'autres calculs 2}
 \label{sec-2-2}
-\subsubsection{{\bfseries\sffamily TODO} $\lambda$-calcul 1}
+\subsubsection{$\lambda$-calcul 1}
 \label{sec-2-2-1}
 Déterminisme, confluence
-\subsubsection{{\bfseries\sffamily TODO} HO$\pi$ 1}
+\subsubsection{HO$\pi$ 1}
 \label{sec-2-2-2}
 Ordre supérieur, restriction de nom
 
 
-\section{{\bfseries\sffamily TODO} Machine abstraite 5.5}
+\section{Machine abstraite 5.5}
 \label{sec-3}
-\subsection{{\bfseries\sffamily TODO} De la machine de Krivine à HOcore 1.5}
+\subsection{De la machine de Krivine à HOcore 1.5}
 \label{sec-3-1}
-\subsubsection{{\bfseries\sffamily TODO} Machine de Krivine 0.2}
+\subsubsection{Machine de Krivine 0.2}
 \label{sec-3-1-1}
 Déterministe, stratégie d'évaluation fixée. Généralisable
-\subsubsection{{\bfseries\sffamily TODO} Machine abstraite pour HOcore 0.6}
+\subsubsection{Machine abstraite pour HOcore 0.6}
 \label{sec-3-1-2}
 Non-déterministe
 Transition : opération élémentaire ?
-\subsubsection{{\bfseries\sffamily TODO} Bonne formation 0.2}
+\subsubsection{Bonne formation 0.2}
 \label{sec-3-1-3}
-\subsection{{\bfseries\sffamily TODO} Correction et complétude 2}
+\subsection{Correction et complétude 2}
 \label{sec-3-2}
-\subsubsection{{\bfseries\sffamily TODO} Traduction 0.7}
+\subsubsection{Traduction 0.7}
 \label{sec-3-2-1}
 \begin{enumerate}
-\item {\bfseries\sffamily TODO} Depuis le processus vers la machine 0.2
+\item Depuis le processus vers la machine 0.2
 \label{sec-3-2-1-1}
-\item {\bfseries\sffamily TODO} Depuis la machine vers le processus 0.5
+\item Depuis la machine vers le processus 0.5
 \label{sec-3-2-1-2}
 \end{enumerate}
-\subsubsection{{\bfseries\sffamily TODO} Propriétés requises 0.3}
+\subsubsection{Propriétés requises 0.3}
 \label{sec-3-2-2}
 Deux diagrammes: correction et complétude. Ouvrir sur équité ?
-\subsubsection{{\bfseries\sffamily TODO} Résumé de la preuve 1}
+\subsubsection{Résumé de la preuve 1}
 \label{sec-3-2-3}
 \begin{enumerate}
-\item {\bfseries\sffamily TODO} Préservation de la bonne formation 0.2
+\item Préservation de la bonne formation 0.2
 \label{sec-3-2-3-1}
-\item {\bfseries\sffamily TODO} Équivalence de machines 0.3
+\item Équivalence de machines 0.3
 \label{sec-3-2-3-2}
-\item {\bfseries\sffamily TODO} Lemme principal 0.3
+\item Lemme principal 0.3
 \label{sec-3-2-3-3}
 \item De la correction à la complétude 0.2
 \label{sec-3-2-3-4}
 \end{enumerate}
 
 
-\section{{\bfseries\sffamily TODO} Implémentation 3}
+\section{Implémentation 3}
 \label{sec-4}
-\subsection{{\bfseries\sffamily TODO} En OCaml 1.5}
+\subsection{En OCaml 1.5}
 \label{sec-4-1}
-\subsubsection{{\bfseries\sffamily TODO} Interpréteur 1}
+\subsubsection{Interpréteur 1}
 \label{sec-4-1-1}
 Toutes les réductions / pas-à-pas.
 Problème d'optimisation.
 \begin{enumerate}
-\item {\bfseries\sffamily TODO} Version naïve 0.2
+\item Version naïve 0.2
 \label{sec-4-1-1-1}
-\item {\bfseries\sffamily TODO} Regroupement par canal 0.2
+\item Regroupement par canal 0.2
 \label{sec-4-1-1-2}
-\item {\bfseries\sffamily TODO} Compilation vers une fonction 0.3
+\item Compilation vers une fonction 0.3
 \label{sec-4-1-1-3}
-\item {\bfseries\sffamily TODO} Structure de multi-ensemble 0.3
+\item Structure de multi-ensemble 0.3
 \label{sec-4-1-1-4}
 \end{enumerate}
-\subsubsection{{\bfseries\sffamily TODO} Machine abstraite 0.5}
+\subsubsection{Machine abstraite 0.5}
 \label{sec-4-1-2}
 Module mutuellement récursifs pour les environnements.
-\subsection{{\bfseries\sffamily TODO} En HOcore 1.5}
+\subsection{En HOcore 1.5}
 \label{sec-4-2}
-\subsubsection{{\bfseries\sffamily TODO} Motivations 0.5}
+\subsubsection{Motivations 0.5}
 \label{sec-4-2-1}
 Expressivité du langage.
 Compréhension de HOcore et de la machine.
-\subsubsection{{\bfseries\sffamily TODO} Éléments de programmation 1}
+\subsubsection{Éléments de programmation 1}
 \label{sec-4-2-2}
 \begin{enumerate}
-\item {\bfseries\sffamily TODO} Nombres entiers 0.3
+\item Nombres entiers 0.3
 \label{sec-4-2-2-1}
-\item {\bfseries\sffamily TODO} Listes 0.2
+\item Listes 0.2
 \label{sec-4-2-2-2}
-\item {\bfseries\sffamily TODO} Booléens 0.2
+\item Booléens 0.2
 \label{sec-4-2-2-3}
-\item {\bfseries\sffamily TODO} Boucles 0.3
+\item Boucles 0.3
 \label{sec-4-2-2-4}
 \end{enumerate}
 
 
-\section{{\bfseries\sffamily TODO} Mise en perspective et conclusion 1.5 (dont biblio)}
+\section{Mise en perspective et conclusion 1.5 (dont biblio)}
 \label{sec-5}
 Formalisation Coq : preuves très détaillées.
 Bisimulation : difficultés.
 Premier pas vers HOpi (ajout de restriction de noms), puis ajout de localités.
 Intérêt : rédaction de preuve, découverte de la concurrence.
 
-\printbibliography
-% Emacs 25.2.1 (Org mode 8.2.10)
+
+\bibliographystyle{plain}
+\bibliography{rapport}
+
 \end{document}

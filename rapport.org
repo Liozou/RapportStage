@@ -1,6 +1,7 @@
 
 #+TITLE: Conception et implémentation d'une machine abstraite pour HOcore
 #+AUTHOR: Lionel Zoubritzky
+#+DATE: Juin - Juillet 2017
 
 #+LATEX_CLASS: article
 #+LATEX_COMPILER: pdflatex
@@ -53,62 +54,62 @@ modélisation de la sémantique (à définir). (cite Wikipedia) ou autre
 Calcul de processus : parallélisme / concurrence.
 
 
-* TODO HOcore 3
-** TODO Définition 1
-*** TODO Syntaxe 0.6
-*** TODO Réduction 0.4
+* HOcore 3
+** Définition 1
+*** Syntaxe 0.6
+*** Réduction 0.4
 Signification de la transmission, exemples (omega)
-** TODO Comparaison avec d'autres calculs 2
-*** TODO \lambda-calcul 1
+** Comparaison avec d'autres calculs 2
+*** \lambda-calcul 1
 Déterminisme, confluence
-*** TODO HO\pi 1
+*** HO\pi 1
 Ordre supérieur, restriction de nom
 
 
-* TODO Machine abstraite 5.5
-** TODO De la machine de Krivine à HOcore 1.5
-*** TODO Machine de Krivine 0.2
+* Machine abstraite 5.5
+** De la machine de Krivine à HOcore 1.5
+*** Machine de Krivine 0.2
 Déterministe, stratégie d'évaluation fixée. Généralisable
-*** TODO Machine abstraite pour HOcore 0.6
+*** Machine abstraite pour HOcore 0.6
 Non-déterministe
 Transition : opération élémentaire ?
-*** TODO Bonne formation 0.2
-** TODO Correction et complétude 2
-*** TODO Traduction 0.7
-**** TODO Depuis le processus vers la machine 0.2
-**** TODO Depuis la machine vers le processus 0.5
-*** TODO Propriétés requises 0.3
+*** Bonne formation 0.2
+** Correction et complétude 2
+*** Traduction 0.7
+**** Depuis le processus vers la machine 0.2
+**** Depuis la machine vers le processus 0.5
+*** Propriétés requises 0.3
 Deux diagrammes: correction et complétude. Ouvrir sur équité ?
-*** TODO Résumé de la preuve 1
-**** TODO Préservation de la bonne formation 0.2
-**** TODO Équivalence de machines 0.3
-**** TODO Lemme principal 0.3
+*** Résumé de la preuve 1
+**** Préservation de la bonne formation 0.2
+**** Équivalence de machines 0.3
+**** Lemme principal 0.3
 **** De la correction à la complétude 0.2
 
 
-* TODO Implémentation 3
-** TODO En OCaml 1.5
-*** TODO Interpréteur 1
+* Implémentation 3
+** En OCaml 1.5
+*** Interpréteur 1
 Toutes les réductions / pas-à-pas.
 Problème d'optimisation.
-**** TODO Version naïve 0.2
-**** TODO Regroupement par canal 0.2
-**** TODO Compilation vers une fonction 0.3
-**** TODO Structure de multi-ensemble 0.3
-*** TODO Machine abstraite 0.5
+**** Version naïve 0.2
+**** Regroupement par canal 0.2
+**** Compilation vers une fonction 0.3
+**** Structure de multi-ensemble 0.3
+*** Machine abstraite 0.5
 Module mutuellement récursifs pour les environnements.
-** TODO En HOcore 1.5
-*** TODO Motivations 0.5
+** En HOcore 1.5
+*** Motivations 0.5
 Expressivité du langage.
 Compréhension de HOcore et de la machine.
-*** TODO Éléments de programmation 1
-**** TODO Nombres entiers 0.3
-**** TODO Listes 0.2
-**** TODO Booléens 0.2
-**** TODO Boucles 0.3
+*** Éléments de programmation 1
+**** Nombres entiers 0.3
+**** Listes 0.2
+**** Booléens 0.2
+**** Boucles 0.3
 
 
-* TODO Mise en perspective et conclusion 1.5 (dont biblio)
+* Mise en perspective et conclusion 1.5 (dont biblio)
 Formalisation Coq : preuves très détaillées.
 Bisimulation : difficultés.
 Premier pas vers HOpi (ajout de restriction de noms), puis ajout de localités.
