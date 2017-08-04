@@ -1,4 +1,4 @@
-% Created 2017-07-28 Fri 11:46
+
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -17,12 +17,16 @@
 \usepackage{aeguill}
 \usepackage{stmaryrd}
 \usepackage{natbib}
+\usepackage{tikz}
+\usetikzlibrary{arrows, automata, positioning, patterns, decorations.pathmorphing, decorations.pathreplacing, arrows.meta}
+
 
 \usepackage[english, french]{babel}
 \author{Lionel Zoubritzky}
 \date{Juin - Juillet 2017}
 \title{Conception et implémentation d'une machine abstraite pour HOcore}
 
+\newcommand{\krivine}[1]{\left\langle{#1}\right\rangle}
 \newcommand{\send}[2]{\bar{#1}\left\langle #2\right\rangle}
 \newcommand{\get}[2]{#1.\left( #2\right)}
 \newcommand{\prog}[1]{\left\{ \begin{array}{l}#1\end{array} \right\}}
@@ -125,14 +129,15 @@ Tous disposent d'un moyen d'émettre et de recevoir des messages, ce qui, avec u
 
 Il existe une machine abstraite très générale pour les calculs de processus, la \emph{Chemical Abstract Machine} \cite{Berry92} qui modélise ces émissions et réceptions de messages par des constituants d'une réaction chimique. Sa généralité lui permet de modéliser plusieurs calculs comme le $\pi$-calcul \cite{Gonthier96} ou le \emph{Distributed Join-Calculus} \cite{Fournet96}.
 Sa nature est cependant très éloignée de l'implémentation qui est faite de ces calculs.
-
 D'autres machines abstraites existent, chacune spécifique à un calcul comme \cite{Bidinger09} pour le $\pi$-calcul, \cite{Sangiorgi01} pour \emph{Safe Ambient} ou \cite{Germain02} pour le M-calcul par exemple.
 
 Le M-calcul est en particulier un calcul d'ordre supérieur, c'est-à-dire que les messages transmis sont eux-mêmes des processus de M-calcul. Ceci modélise la réalité des processus distribués dans lesquels du code exécutable peut-être transmis sur le réseau.
 Le $\pi$-calcul possède aussi un pendant d'ordre supérieur, HO$\pi$\cite{Sangiorgi93}.
-HO$\pi$ ne dispose cependant pas encore de machine abstraite permettant de de le modéliser, alors qu'il s'agit du calcul de processus d'ordre supérieur de référence.
+HO$\pi$ ne dispose cependant pas encore de machine abstraite permettant de le modéliser, alors qu'il s'agit du calcul de processus d'ordre supérieur de référence.
 
-Afin de développer une machine abstraite pour HO$\pi$, j'ai conçu au cours de mon stage une machine abstraite pour HOcore\cite{Lanese08}, un calcul de processus d'ordre supérieur minimal, inspiré de HO$\pi$.
+Ce stage se place donc dans le cadre du développement d'une machine abstraite pour HO$\pi$. Plus précisément, j'ai conçu une machine abstraite pour HOcore\cite{Lanese08}, un calcul de processus d'ordre supérieur minimal, inspiré de HO$\pi$ mais simplifié de façon à ne contenir que les constructions nécessaires à un calcul de processus d'ordre supérieur.
+J'ai ensuite prouvé que la machine abstraite simulait de façon adéquate le calcul, selon des notions de correction et de complétude développées en \ref{sec-3-2-2}.
+Enfin, j'ai réalisé deux implémentations de la machine, une en OCaml afin de visualiser son action, et l'autre en HOcore afin de mieux comprendre ce calcul, et pour montrer son expressivité.
 
 
 
@@ -142,18 +147,79 @@ Afin de développer une machine abstraite pour HO$\pi$, j'ai conçu au cours de 
 \label{sec-2-1}
 \subsubsection{Syntaxe 0.6}
 \label{sec-2-1-1}
+
+La syntaxe d'un processus HOcore est définie par récurrence avec
+\[P::=\begin{array}{c|c|c|c|c}
+P \parallel P & \send{a}P & a(x).P & x & \star
+\end{array}\]
+\begin{itemize}
+	\item $P\parallel Q$ désigne la composition en parallèle des deux processus $P$ et $Q$.
+	\item $\send{a}P$ désigne l'émission du processus $P$ sur le canal $a$. Comme le message émis est lui-même un processus, le calcul est d'ordre supérieur.
+	\item $a(x).P$ désigne la réception d'un message sur le canal $a$ avec pour continuation $P$. $x$ désigne le message reçu.
+	\item $x$ est une variable.
+	\item $\star$ désigne le processus vide, qui n'agit pas.
+\end{itemize}
+
+L'opération $\parallel$ est commutative, associative et possède $\star$ comme élément neutre.
+
 \subsubsection{Réduction 0.4}
 \label{sec-2-1-2}
-Signification de la transmission, exemples (omega)
-\subsection{Comparaison avec d'autres calculs 2}
-\label{sec-2-2}
-\subsubsection{$\lambda$-calcul 1}
-\label{sec-2-2-1}
-Déterminisme, confluence
-\subsubsection{HO$\pi$ 1}
-\label{sec-2-2-2}
-Ordre supérieur, restriction de nom
 
+HOcore dispose d'une unique règle de réduction, consistant en la communication d'un message entre un émission et une réception.
+
+Formellement, cette règle s'écrit
+\[P\parallel \send{a}Q \parallel a(x).R \to P\parallel
+R\{x\gets Q\}\]
+
+Le terme $R\{x\gets Q\}$ correspond à $R$ dans lequel toutes les occurrences de $x$ ont été remplacées par $Q$.
+
+
+\textsl{\\Exemples :}
+\begin{itemize}
+	\item $\star$ n'admet pas de réduction.
+	\item $\send{a}y\parallel a(x).x\to y$.
+	\item Pour $P = \send{a}y \parallel \send{a}z \parallel a(x).x$, il y a deux réductions possibles : $P \to \send{a}y\parallel z$ et $P \to \send{a}z \parallel y$.
+	\item Pour $\Omega = \send{a}{a(x).(x\parallel \send{a}x)} \parallel a(x).(x\parallel \send{a}x)$, on a : $\Omega \to \Omega$.
+\end{itemize}
+
+\subsubsection{Indices de de Bruijn}
+\label{sec-1-2}
+
+La syntaxe initiale est sujette au problème de l'$\alpha$-renommage, c'est-à-dire que, quitte à renommer entièrement les variables, un même processus peut s'écrire de plusieurs façons différentes. Ainsi, $a(x).x$ et $a(y).y$ désignent deux réceptions équivalentes, mais qui ne sont pas écrites de la même façon.
+
+Pour y remédier, on utilise donc les variables de de Bruijn, c'est-à-dire qu'une variable ne sera plus nommée, mais sera représentée par le nombre de liants de la forme $a(x)$ se trouvant entre sa déclaration et sa position.
+Formellement, la syntaxe devient
+\[P::=\begin{array}{c|c|c|c|c}P\parallel P & \send{a}P & a.P & i & \star\end{array}\]
+avec $i$ un indice de de Bruijn, c'est-à-dire un entier.
+
+\textsl{\\Exemples :}
+\begin{itemize}
+	\item $\star$ s'écrit de la même façon dans les deux syntaxes.
+	\item $a(x).x$ se réécrit en $a.0$ car il n'y a aucun liant entre la position du $x$ et sa déclaration dans $a(x)$.
+	\item $a(x).b(y).x$ se réécrit $a.b.1$ car il y a un seul liant, $b(y)$, entre $x$ et sa déclaration dans $a(x)$.
+	\item $\Omega = \send{a}{a(x).(x\parallel \send{a}x)} \parallel a(x).(x\parallel \send{a}x)$ se réécrit
+	$\send{a}{a.(0\parallel \send{a}0)} \parallel a.(0\parallel \send{a}0)$.
+\end{itemize}
+
+Un dernier problème se pose, pour traiter le cas des variables libres, c'est-à-dire des variables qui n'ont jamais été déclarées par un liant.
+Pour simplifier le opérations sur la machine, j'ai décidé d'utiliser la convention localement anonyme\cite{Chargueraud12}, consistant à dire qu'une variable liée est représentée par son indice de de Bruijn, tandis qu'une variable libre est nommée.
+La syntaxe que j'ai utilisé est donc finalement
+\[P::=\begin{array}{c|c|c|c|c|c}P\parallel P & \send{a}P & a.P & i & x & \star\end{array}\]
+où $x$ désigne une variable libre.
+Par exemple, $\send{a}y\parallel a(x).x$ se réécrit en $\send{a}y \parallel a.0$.
+
+\subsection{Propriétés du calcul 0.5}
+\label{sec-2-2}
+
+Comme le montre le troisième exemple précédent, HOcore est non-déterministe car un terme peut avoir plusieurs réductions différentes possibles en même temps.
+Il n'est cependant pas confluent, c'est-à-dire que si un processus $P$ admet deux réductions distinctes ayant pour résultat $P_1$ et $P_2$, il est possible que $P_1$ et $P_2$ ne puissent pas se réduire en un nombre quelconque d'étapes vers un même processus $Q$. C'est par exemple le cas de $\send{a}y\parallel \send{a}z\parallel a(x).x$.
+Cette propriété est l'équivalent de la notion de course critique dans un programme concurrent : deux exécutions d'un même processus peuvent ne pas avoir la même issue en fonction de l'entrelacement des sous-processus mis en parallèle.
+
+La différence principale entre HOcore et HO$\pi$ dont il est issu est l'absence d'opérateur de restriction de nom.
+En effet, de nombreux calculs de processus disposent d'un moyen plus ou moins direct de créer des nouveaux nom de canaux ou de variables, ce qui permet d'effectuer en parallèle un nombre arbitraire de tâches.
+Les opérations de ce genre sont cependant impossibles en HOcore. En particulier, le nombre de canaux différents qui peuvent exister au cours de l'exécution d'un processus est toujours majoré par le nombre de canaux initial.
+
+Cette contrainte fait que HOcore dispose d'une expressivité moindre que la beaucoup d'autres calculs. Il reste cependant Turing-complet \cite{Lanese08}.
 
 \section{Machine abstraite 5.5}
 \label{sec-3}
@@ -161,37 +227,290 @@ Ordre supérieur, restriction de nom
 \label{sec-3-1}
 \subsubsection{Machine de Krivine 0.2}
 \label{sec-3-1-1}
-Déterministe, stratégie d'évaluation fixée. Généralisable
+
+Une machine abstraite classique est la machine de Krivine, qui sert à modéliser le $\lambda$-calcul et plus particulièrement sa stratégie d'évaluation externe gauche. Je m'en suis inspiré pour construire celle pour HOcore.
+Pour rappel, la syntaxe du $\lambda$-calcul en utilisant des indices de de Bruijn est la suivante :
+\[u::=\begin{array}{c|c|c}\lambda.u & u\, u & i\end{array}\]
+
+La machine de Krivine est alors définie comme un triplet formé d'un $\lambda$-terme, d'une pile $\pi$ et d'un environnement $e$.
+La pile comme l'environnement est une liste dont les éléments sont définis par récurrence comme étant des paires formée d'un $\lambda$-terme et d'un environnement.
+
+La machine possède plusieurs réductions possibles, en fonction de la forme du $\lambda$-terme:
+
+\begin{tabular}{rclccrcl}
+	$\krivine{\lambda.u,x::\pi,e}$ &$\to$& $\krivine{u,\pi,x::e}$ 
+	& & & $\krivine{i+1,\pi,x::e}$ & $\to$ & $\krivine{i,\pi,e}$ \\
+	$\krivine{u v,\pi,e}$ & $\to$ & $\krivine{u, (v,e)::\pi,e}$ 
+	& & & $\krivine{0,\pi,(u,e')::e}$ & $\to$ & $\krivine{u,\pi,e'}$
+\end{tabular}
+
+\textit{}
+
+La machine de Krivine est déterministe puisqu'à un $\lambda$-terme ne peut correspondre qu'une seule réduction.
+Cela vient du fait qu'elle simule une stratégie d'évaluation particulière, l'appel par nom : dans un terme de la forme $(\lambda.u) v$, c'est d'abord $u$ qui est évalué puis $v$.
+Cela se justifie car le $\lambda$-calcul est confluent, et si un terme dispose d'une forme normale (c'est-à-dire s'il peut se réduire en un terme qui ne se réduit plus ensuite), alors cette stratégie d'évaluation mène à cette unique forme normale.
+
 \subsubsection{Machine abstraite pour HOcore 0.6}
 \label{sec-3-1-2}
-Non-déterministe
-Transition : opération élémentaire ?
+
+HOcore n'est pas un calcul confluent, donc j'ai choisi de ne pas implémenter de stratégie d'évaluation spécifique dans la machine abstraite.
+Par conséquent, celle-ci est non-déterministe, puisqu'elle doit pouvoir simuler n'importe quelle réduction du processus HOcore initial.
+
+La machine est inspirée de celle de Krivine par l'utilisation d'environnements $e$, récursivement définis comme des listes de paires formées d'un processus HOcore et d'un environnement. La syntaxe de la machine est :
+\[\begin{array}{c|c|c|c|c}M::= M + M & (\send{a}P,e) & (a.P,e) & x & \star\end{array}\]
+\begin{itemize}
+	\item $+$ est le pendant de $\parallel$ pour les processus. Il est de même commutatif, associatif et admet $\star$ comme élément neutre.
+	\item $(\send{a}P,e)$ et $(a.P,e)$ sont des processus annotés d'un environnement, respectivement une émission et une réception.
+	\item $x$ désigne une variable libre.
+	\item $\star$ est la machine vide, qui ne peut réaliser aucune action.
+\end{itemize}
+
+Pour pouvoir définir la transition disponible pour la machine, on utilise une traduction des processus annotés $(P,e)$ en machine, notée $\machine{(P,e)}$ et récursivement définie comme
+\begin{align*}
+\machine{(P\parallel Q,e)} &= \machine{(P,e)} + \machine{(Q,e)} &\quad
+\machine{(x,e)} &= x &\quad
+\machine{(\star,e)} &= \star \\
+\machine{(\send{a}P,e)} &= (\send{a}P,e) &\quad
+\machine{(a.P,e)} &= (a.P,e) &
+\machine{(i,e)} &= \machine{e\block{i}}
+\end{align*}
+
+La transition d'une machine est alors
+\[(\send{a}Q,e) + (a.R,f) + M \to \machine{(R, (Q,e)::f)} + M\]
+
+Ceci signifie que le message émis est simplement mis dans l'environnement de la réception, sauf dans le cas où la réception est une variable liée, auquel cas sa valeur est évaluée.
+
+Cette transition n'est pas tout à fait élémentaire.
+En effet, l'évaluation récursive de $\machine{e\block{i}}$ dans le cas d'une variable n'est pas immédiate : on aurait pu définir à la place $\machine{(i,e)}' = (i,e)$ où $(i,e)$ serait une nouvelle construction possible pour la machine, et de rajouter la transition spontanée $(i,e)+M\to \machine{e\block{i}}'+M$. Les réductions possibles de cette alternative sont plus élémentaires, et on peut démontrer que toute transition de la première forme correspond à une série de réductions de la deuxième.
+
+L'intérêt de la transition retenue par rapport à cette alternative est qu'une réduction du processus modélisé correspond exactement à une transition de la machine correspondante, ce qui simplifie grandement les preuves faites sur la machine.
+
+
+\textit{\\Exemples}
+\begin{itemize}
+	\item $\star$ n'admet pas de transition.
+	\item $(\send{a}y, \empty) + (a.0, \empty) \to \machine{(0, (y,\empty)::\empty)} = y$.
+	\item $\paren{\send{a}0, \block{(x,\empty)}} + \paren{a.(1\parallel \send{b}\star), \block{(y,\empty)}} \to y + \paren{\send{b}\star, \block{\paren{x,\empty} ; \paren{y,\empty}}}$.
+\end{itemize}
+
 \subsubsection{Bonne formation 0.2}
 \label{sec-3-1-3}
+
+L'utilisation de la convention localement anonyme permet l'existence de terme qui sont mal formés, si une variable de de Bruijn n'est pas liée. Par exemple, dans le processus $\send{a}0$, la variable $0$ est en réalité libre, et devrait donc être nommée et non pas écrite comme un indice de de Bruijn.
+
+La correction de la machine est donc soumise à la contrainte que tous ses indices de de Bruijn du processus initial se réfèrent à des liants valides, propriété dite de bonne formation. Il est intuitif, et on vérifie bien, que si $P\to Q$ et $P$ est bien formé, alors $Q$ l'est aussi.
+
+Une condition équivalente a été développée sur la machine de façon à ce que si $M\to N$ et $M$ est bien formée, alors $N$ aussi.
+
 \subsection{Correction et complétude 2}
 \label{sec-3-2}
 \subsubsection{Traduction 0.7}
 \label{sec-3-2-1}
-\begin{enumerate}
-\item Depuis le processus vers la machine 0.2
-\label{sec-3-2-1-1}
-\item Depuis la machine vers le processus 0.5
-\label{sec-3-2-1-2}
-\end{enumerate}
+
+L'essentiel de la preuve consiste à montrer qu'il existe une équivalence entre les transitions de la machine et les réductions des processus.
+Pour montrer ceci, il est nécessaire de disposer d'une traduction entre les machines et les processus.
+
+Un processus $P$ est simplement traduit en une machine abstraite qui le représente et notée $\machine{P}$, définie par
+$\machine{P} = \machine{(P,\empty)}$.
+
+La traduction inverse est plus complexe. Elle consiste à remplacer toutes les variables liées à une réception qui a déjà reçu un message par le message lui-même, que l'on peut trouver dans un environnement.
+Pour définir formellement cette traduction inverse, on a besoin d'utiliser un paramètre annexe, la profondeur, qui sert à compter le nombre de liant sous lequel le terme à traduire est placé.
+Cette nécessité vient de l'utilisation des variables de de Bruijn.
+On définit donc la traduction partielle d'un processus annoté $(P,e)$ avec profondeur $d$, notée $\process{(P,e)}^d$, définie par
+\begin{align*}
+\process{(P\parallel Q,e)}^d &= \process{(P,e)}^d \parallel \process{(Q,e)}^d
+& \process{(x,e)}^d &= x
+&\process{(\send{a}P,e)}^d &= \send{a}{\process{(P,e)}^d} \\
+\process{(i,e)}^d &= \left\{ \begin{array}{ll}
+i & \text{si } i<d\\
+\process{e\block{i-d}}^0 & \text{sinon}
+\end{array}\right.
+& \process{(\star,e)}^d &= \star
+& \process{(a.P,e)}^d &= a.\paren{\process{(P,e)}^{d+1}} 
+\end{align*}
+
+On peut alors définir la traduction inverse d'une machine, notée $\process{M}$, simplement par
+\begin{align*}
+\process{M+N} &= \process{M} \parallel \process{N}
+&\quad \process{(P,e)} &= \process{(P,e)}^0
+&\quad\process{x} &= x &\quad \process{\star} &= \star
+\end{align*}
+
+Une première propriété de ces traductions que l'on a est que pour tout processus $P$ bien formé, on a $\process{\machine{P}} = P$, ce qui est attendu et donne un sens à la traduction.
+
+L'autre égalité, $\machine{\process{M}} = M$, est en revanche fausse dans le cas général d'une machine $M$ bien formée. En effet, tous les environnements apparaissant dans la traduction directe $\machine{P}$ sont vides, ce qui n'est pas nécessairement le cas chez la machine initiale $M$.
+
+Ce phénomène est une conséquence du fait qu'on peut obtenir un même processus HOcore à travers des suites de réductions différentes en partant de termes différents. En effet, la machine garde dans ses environnements la trace des différentes communications qui ont eu lieu, c'est-à-dire des réductions successives qui se sont produites.
+
 \subsubsection{Propriétés requises 0.3}
 \label{sec-3-2-2}
-Deux diagrammes: correction et complétude. Ouvrir sur équité ?
+
+Deux propriétés sont requises pour la machine : la correction et la complétude.
+
+La correction de la machine signifie que toute suite de transitions partant d'une machine bien formée correspond à une suite de réductions du processus en lequel elle est traduit.
+
+La complétude est la propriété duale, consistant à dire que toute suite de réductions d'un processus bien formé correspond à une suite de transitions de la machine en lequel il est traduit.
+
+Ces deux propriétés se visualisent plus facilement à l'aide de diagrammes :\\
+
+\begin{tikzpicture}
+
+\node (M) {$M$};
+\node (0) [left = 2cm of M] {};
+\node (P) [below = 1cm of M]{$P$};
+\node (t) [below left = 0.2cm and -0.2cm of M] {$\process{.}$};
+\node (M') [right = 0.94cm of M]{$M'$};
+\node (P') [below right = 1.4cm of M]{$P'$};
+\node (t') [below right = 0.2cm and -0.2cm of M'] {$\process{.}$};
+\node (caption) [below right = 0cm and -0.3cm of P] {Correction};
+
+\draw[->, decorate, decoration=snake] (M) -- (P);
+\draw[->] (M) -- (M');
+
+\draw[->, dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, dotted] (P) -- (P');
+
+\end{tikzpicture}
+\begin{tikzpicture}
+
+\node (M) {$M$};
+\node (0) [left = 2cm of M] {};
+\node (P) [below = 1cm of M]{$P$};
+\node (t) [below left = 0.2cm and -0.2cm of M] {$\process{.}$};
+\node (M') [right = 0.94cm of M]{$M'$};
+\node (P') [below right = 1.4cm of M]{$P'$};
+\node (t') [below right = 0.2cm and -0.2cm of M'] {$\process{.}$};
+
+\draw[->, decorate, decoration=snake] (M) -- (P);
+\draw[->] (P) -- (P');
+
+\draw[->, dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, dotted] (M) -- (M');
+\node (caption) [below right = 0cm and -0.3cm of P] {Complétude};
+
+\end{tikzpicture}
+
+Sur ces diagrammes, les flèches pleines sont des quantificateurs universels, et les flèches pointillées, des quantificateurs existentiels.
+
+Les flèches horizontales désignent un nombre quelconque de réductions, mais l'intérêt de la transition retenue pour les machines est qu'une transition au sein des machines correspond exactement à une réduction pour les processus.
+
 \subsubsection{Résumé de la preuve 1}
 \label{sec-3-2-3}
+
+La preuve de la correction et de la complétude de la machine abstraite passe par de nombreuses étapes intermédiaires, nécessaires notamment pour la manipulation correcte des indices de de Bruijn.
+Elle consiste en trois grandes étapes :
+
 \begin{enumerate}
-\item Préservation de la bonne formation 0.2
-\label{sec-3-2-3-1}
 \item Équivalence de machines 0.3
 \label{sec-3-2-3-2}
+
+Raisonner directement sur une machine abstraite quelconque pour établir la correction est délicat, car les environnements peuvent être de n'importe quelle forme.
+On réduit donc le problème à l'étude de certaines machines particulières.
+
+Deux machines $M$ et $N$ sont dites équivalentes lorsque $\process{M} = \process{N}$, ce qu'on note $M\sim N$.
+Le représentant standard de la classe d'équivalence de $M$, que l'on note $\widehat{M}$, est défini comme $\widehat{M} = \machine{\process{M}}$.
+
+C'est ce $\widehat{M}$ qui va servir à établir la correction de la machine, car tous ses environnements sont vides, ce qui le rend plus manipulable.
+Parmi les premières propriétés de $\widehat{M}$ on trouve la stabilité par $+$, c'est-à-dire $\widehat{M+N} = \widehat{M} + \widehat{N}$ et la bonne définition, soit $\widehat{\widehat{M}} = M$.
+Cette dernière propriété est d'ailleurs un simple corollaire au fait que $\process{\machine{P}} = P$, ce que l'on a déjà vu.
+
 \item Lemme principal 0.3
 \label{sec-3-2-3-3}
+
+Le lemme principal à établir correspond à montrer la correction de la machine lors d'une unique transition, en partant d'un représentant standard.
+
+Formellement, on montre que si $M\to M'$, alors $\widehat{M}\to M''$ avec $M'\sim M''$.
+
+Pour conclure la preuve de la correction, il faut enfin prouver que si $\machine{P}\to M''$ alors $P\to P'$ avec $\process{M''} = P'$.
+
+Ces deux lemmes principaux sont décrits par les deux diagrammes :\\
+
+\begin{tikzpicture}
+
+\node (M) {$M$};
+\node (0) [left = 2cm of M] {};
+\node (P) [below = 1cm of M]{$\widehat{M}$};
+\node (t) [below left = 0.2cm and -0.2cm of M] {$\machine{\process{.}}$};
+\node (M') [right = 1.085cm of M]{$M'$};
+\node (P') [below right = 1.48cm of M]{$M''$};
+\node (t') [below right = 0.4cm and -0.2cm of M'] {$\sim$};
+\node (1) [right = 1.5cm of t'] {et};
+
+\draw[->, decorate, decoration=snake] (M) -- (P);
+\draw[->] (M) -- (M');
+
+\draw[<->, dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, dotted] (P) -- (P');
+
+\end{tikzpicture}
+\begin{tikzpicture}
+
+\node (M) {$M$};
+\node (0) [left = 2cm of M] {};
+\node (P) [below = 1cm of M]{$P$};
+\node (t) [below left = 0.2cm and -0.2cm of M] {$\machine{.}$};
+\node (M') [right = 0.94cm of M]{$M''$};
+\node (P') [below right = 1.4cm of M]{$P'$};
+\node (t') [below right = 0.2cm and -0.2cm of M'] {$\process{.}$};
+
+\draw[->, decorate, decoration=snake] (P) -- (M);
+\draw[->] (M) -- (M');
+
+\draw[->, dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, dotted] (P) -- (P');
+
+\end{tikzpicture}
+
+Mis bout à bout, on obtient donc la forme générale de la preuve :\\
+
+\begin{tikzpicture}
+
+\node (M) {$M$};
+\node (0) [left = 3.5cm of M] {};
+\node (P) [below = 3cm of M]{$P$};
+\node (N) [below right = 1cm of M] {$\widehat{M}$};
+\node (p) [below left = 1.2cm and -0.2cm of M] {$\process{.}$};
+\node (M') [right = 4.94cm of M]{$M'$};
+\node (M'')[right = 2cm of N] {$M''$};
+\node (P') [below = 2.965cm of M']{$P'$};
+\node (p') [below right = 1.2cm and -0.2cm of M'] {$\process{.}$};
+
+\node (m) [below = 0.5cm of N] {$\machine{.}$};
+\node (m') [below = 0.5cm of M''] {$\process{.}$};
+
+\draw[->, decorate, decoration=snake] (M) -- (P);
+\draw[->] (M) -- (M');
+
+\draw[->, dashed] (N) -- (M'');
+
+\draw[->, dashed, decorate, decoration=snake] (P) -- (N);
+\draw[->, dashed, decorate, decoration=snake] (M'') -- (P');
+
+\draw[->, dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, dotted] (P) -- (P');
+
+\end{tikzpicture}
+
+\textit{}
+
 \item De la correction à la complétude 0.2
 \label{sec-3-2-3-4}
+
+La complétude se déduit d'une propriété de correction un peu plus forte que celle que l'on vient de voir.
+On peut en effet étiqueter les transitions d'un processus : si $P$ se réduit en $P'$ alors $P$ est de la forme $Q\parallel(a.R)\parallel\send{a}S$.
+On étiquette alors sa transition par le couple émission / réception :
+$P\xrightarrow{(\send{a}S, a.R)} P'$.
+
+On peut de même étiqueter les transitions au sein des machines : pour $M = (\send{a}Q, e) + (a.R, f) + N \to M'$, on note
+$M \xrightarrow{\paren{ \process{(\send{a}Q, e)}, \process{(a.R,f)}} } M'$.
+
+On a alors la nouvelle propriété de correction :
+Si $M\xrightarrow{t} M'$ alors $\process{M}\xrightarrow{t} P'$ avec $\process{M'} = P'$.
+
+On peut alors prouver la complétude en remarquant que si $P\xrightarrow{t}P'$, alors, du fait de la structure de $P$, pour tout $M$ tel que $\process{M} = P$, $M$ admet une transition étiquetée par $t$ vers un $M'$.
+Or, par correction, $P$ admet alors une transition étiquetée par $t$ vers un $P''$ et $\process{M'} = P''$.
+Enfin, comme $P\xrightarrow{t} P'$ et $P\xrightarrow{t} P''$, $P' = P''$ donc $\process{M'} = P'$.
+
 \end{enumerate}
 
 
