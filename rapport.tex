@@ -12,7 +12,7 @@
 \usepackage{amsmath}
 \usepackage{textcomp}
 \usepackage{amssymb}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \tolerance=1000
 \usepackage{aeguill}
 \usepackage{stmaryrd}
@@ -42,17 +42,6 @@
 \newcommand{\new}[1]{\left\llbracket{#1}\right\rrbracket_{\mathcal{A}}}
 \newcommand{\process}[1]{\left\llbracket{#1}\right\rrbracket_{\mathcal{P}}}
 \newcommand{\sizeof}[1]{\text{size}\left(#1\right)}
-\newcounter{c_theo}
-\newcounter{c_def}
-\newcommand{\definition}{\refstepcounter{c_def}
-	\textbf{Definition \arabic{c_def}.} }
-\newcommand{\theorem}{\refstepcounter{c_theo}
-	\textbf{Theorem \arabic{c_theo}.} }
-\newcommand{\lemma}{\refstepcounter{c_theo}
-	\textbf{Lemma \arabic{c_theo}.} }
-\newcommand{\corollary}{\refstepcounter{c_theo}
-	\textbf{Corollary \arabic{c_theo}.} }
-\newcommand{\proof}{\textbf{\\Proof of \arabic{c_theo}.} }
 \newcommand{\transmit}[1]{\overset{#1}\longrightarrow}
 \newcommand{\transmitb}[1]{\overset{\left(\overline{#1}\right)}\longrightarrow}
 \newcommand{\transmitn}[1]{\overset{\overline{#1}+}\longrightarrow}
@@ -61,7 +50,13 @@
 \newcommand{\bisim}{\approx_m}
 \newcommand{\stateA}[1]{\left(#1\right)_{\mathcal{A}}}
 
+\usepackage[langlinenos=true,newfloat=true]{minted}
+\newcommand{\codeOCaml}[1]{\mintinline[style=colorful,fontfamily=tt]{OCaml}{#1}}
+
+
 \begin{document}
+
+
 
 \begin{center}
 	\bsc{\'Ecole Normale Supérieure}
@@ -80,7 +75,8 @@
 	
 	Lionel \bsc{Zoubritzky}
 	
-	\texttt{lionel.zoubritzky@ens.fr}
+	\texttt{\href{mailto:lionel.zoubritzky@ens.fr}{lionel.zoubritzky@ens.fr}}
+	
 	
 	\vspace{1cm}
 	
@@ -96,28 +92,20 @@
 	\vspace{1cm}
 	
 	IRISA / INRIA Rennes
-
-	\bf	
-	NOTES : 
-
-	HO$\pi \to$ X
-	
-	$\lambda$-calcul $\to$ Krivine
-	
-	bonne formation ?
-	
+	\thispagestyle{empty}
 \end{center}
 
 \clearpage
+\setcounter{page}{1}
 \tableofcontents
 \clearpage
 
 
-\section{Introduction 1}
+\section{Introduction}
 \label{sec-1}
 
 Pour étudier les propriétés de programmes ou de langages de programmation, il est souvent nécessaire de les modéliser par des systèmes formels plus faciles à manipuler. 
-Le lien à établir entre ces systèmes formels, comme le $\lambda$-calcul, et le langage étudié, par exemple OCaml, peut être cependant assez éloigné : on a alors recours à des machines abstraites pour fournir une modélisation intermédiaires du système formel, et le rapprocher du fonctionnement de la machine concrète.
+Le lien à établir entre ces systèmes formels, comme le $\lambda$-calcul, et le langage étudié, par exemple OCaml, peut être cependant assez éloigné : on a alors recours à des machines abstraites pour fournir une modélisation intermédiaire du système formel, et le rapprocher du fonctionnement de la machine concrète.
 
 La notion de machine abstraite est en soi assez vague, puisqu'elle peut recouvrir des niveaux d'abstractions très divers.
 Parmi les plus connues, on trouve notamment la machine de Turing qui sert de référence dans la théorie de la calculabilité.
@@ -128,24 +116,26 @@ Pour ce faire, plusieurs systèmes formels ont été créés pour les modéliser
 Tous disposent d'un moyen d'émettre et de recevoir des messages, ce qui, avec une certaine notion de parallélisme, forme le c\oe ur des calculs de processus.
 
 Il existe une machine abstraite très générale pour les calculs de processus, la \emph{Chemical Abstract Machine} \cite{Berry92} qui modélise ces émissions et réceptions de messages par des constituants d'une réaction chimique. Sa généralité lui permet de modéliser plusieurs calculs comme le $\pi$-calcul \cite{Gonthier96} ou le \emph{Distributed Join-Calculus} \cite{Fournet96}.
-Sa nature est cependant très éloignée de l'implémentation qui est faite de ces calculs.
+Cependant, sa nature est très éloignée de l'implémentation qui est faite de ces calculs.
 D'autres machines abstraites existent, chacune spécifique à un calcul comme \cite{Bidinger09} pour le $\pi$-calcul, \cite{Sangiorgi01} pour \emph{Safe Ambient} ou \cite{Germain02} pour le M-calcul par exemple.
 
 Le M-calcul est en particulier un calcul d'ordre supérieur, c'est-à-dire que les messages transmis sont eux-mêmes des processus de M-calcul. Ceci modélise la réalité des processus distribués dans lesquels du code exécutable peut-être transmis sur le réseau.
-Le $\pi$-calcul possède aussi un pendant d'ordre supérieur, HO$\pi$\cite{Sangiorgi93}.
-HO$\pi$ ne dispose cependant pas encore de machine abstraite permettant de le modéliser, alors qu'il s'agit du calcul de processus d'ordre supérieur de référence.
+Le $\pi$-calcul possède aussi un pendant d'ordre supérieur, HO$\pi$ \cite{Sangiorgi93}.
+HO$\pi$ ne dispose cependant pas encore de machine abstraite permettant de le modéliser, alors qu'il s'agit d'un calcul de processus d'ordre supérieur de référence.
 
-Ce stage se place donc dans le cadre du développement d'une machine abstraite pour HO$\pi$. Plus précisément, j'ai conçu une machine abstraite pour HOcore\cite{Lanese08}, un calcul de processus d'ordre supérieur minimal, inspiré de HO$\pi$ mais simplifié de façon à ne contenir que les constructions nécessaires à un calcul de processus d'ordre supérieur.
-J'ai ensuite prouvé que la machine abstraite simulait de façon adéquate le calcul, selon des notions de correction et de complétude développées en \ref{sec-3-2-2}.
-Enfin, j'ai réalisé deux implémentations de la machine, une en OCaml afin de visualiser son action, et l'autre en HOcore afin de mieux comprendre ce calcul, et pour montrer son expressivité.
+Ce stage se situe dans le cadre du développement d'une machine abstraite pour HO$\pi$. Plus précisément, j'ai conçu une machine abstraite pour HOcore \cite{Lanese08}, un calcul de processus d'ordre supérieur minimal, inspiré de HO$\pi$ mais simplifié de façon à ne contenir que les constructions nécessaires à un calcul de processus d'ordre supérieur.
+J'ai ensuite prouvé que la machine abstraite simulait de façon adéquate le calcul, selon des notions de correction et de complétude développées en \ref{sec-3-2-2}.\footnote{La preuve complète est disponible à l'adresse :
+	
+\url{http://people.rennes.inria.fr/Alan.Schmitt/research/AbstractMachineHOCoreProofs.pdf}}
+Enfin, j'ai réalisé deux implémentations de la machine, une en OCaml afin de visualiser son action, et l'autre en HOcore afin de mieux comprendre ce calcul et pour montrer son expressivité.
 
 
 
-\section{HOcore 3}
+\section{HOcore}
 \label{sec-2}
-\subsection{Définition 1}
+\subsection{Définition}
 \label{sec-2-1}
-\subsubsection{Syntaxe 0.6}
+\subsubsection{Syntaxe}
 \label{sec-2-1-1}
 
 La syntaxe d'un processus HOcore est définie par récurrence avec
@@ -153,22 +143,22 @@ La syntaxe d'un processus HOcore est définie par récurrence avec
 P \parallel P & \send{a}P & a(x).P & x & \star
 \end{array}\]
 \begin{itemize}
-	\item $P\parallel Q$ désigne la composition en parallèle des deux processus $P$ et $Q$.
-	\item $\send{a}P$ désigne l'émission du processus $P$ sur le canal $a$. Comme le message émis est lui-même un processus, le calcul est d'ordre supérieur.
-	\item $a(x).P$ désigne la réception d'un message sur le canal $a$ avec pour continuation $P$. $x$ désigne le message reçu.
-	\item $x$ est une variable.
+	\item $P\parallel Q$ désigne la composition en parallèle des deux processus $P$ et $Q$ ;
+	\item $\send{a}P$ désigne l'émission du processus $P$ sur le canal $a$. Comme le message émis est lui-même un processus, le calcul est d'ordre supérieur ;
+	\item $a(x).P$ désigne la réception d'un message sur le canal $a$ avec pour continuation le processus $P$, dans lequel $x$ désigne le message reçu.
+	\item $x$ est une variable ;
 	\item $\star$ désigne le processus vide, qui n'agit pas.
 \end{itemize}
 
 L'opération $\parallel$ est commutative, associative et possède $\star$ comme élément neutre.
 
-\subsubsection{Réduction 0.4}
+\subsubsection{Réduction}
 \label{sec-2-1-2}
 
-HOcore dispose d'une unique règle de réduction, consistant en la communication d'un message entre un émission et une réception.
+HOcore dispose d'une unique règle de réduction, consistant en la communication d'un message entre une émission et une réception.
 
 Formellement, cette règle s'écrit
-\[P\parallel \send{a}Q \parallel a(x).R \to P\parallel
+\[P\parallel \send{a}Q \parallel a(x).R\ \to\ P\parallel
 R\{x\gets Q\}\]
 
 Le terme $R\{x\gets Q\}$ correspond à $R$ dans lequel toutes les occurrences de $x$ ont été remplacées par $Q$.
@@ -187,7 +177,7 @@ Le terme $R\{x\gets Q\}$ correspond à $R$ dans lequel toutes les occurrences de
 
 La syntaxe initiale est sujette au problème de l'$\alpha$-renommage, c'est-à-dire que, quitte à renommer entièrement les variables, un même processus peut s'écrire de plusieurs façons différentes. Ainsi, $a(x).x$ et $a(y).y$ désignent deux réceptions équivalentes, mais qui ne sont pas écrites de la même façon.
 
-Pour y remédier, on utilise donc les variables de de Bruijn, c'est-à-dire qu'une variable ne sera plus nommée, mais sera représentée par le nombre de liants de la forme $a(x)$ se trouvant entre sa déclaration et sa position.
+Pour y remédier, on utilise donc les variables de de Bruijn, c'est-à-dire qu'une variable ne sera plus nommée, mais sera représentée par le nombre de réceptions intermédiaires de la forme $a(x)$ se trouvant entre sa déclaration et sa position.
 Formellement, la syntaxe devient
 \[P::=\begin{array}{c|c|c|c|c}P\parallel P & \send{a}P & a.P & i & \star\end{array}\]
 avec $i$ un indice de de Bruijn, c'est-à-dire un entier.
@@ -201,87 +191,92 @@ avec $i$ un indice de de Bruijn, c'est-à-dire un entier.
 	$\send{a}{a.(0\parallel \send{a}0)} \parallel a.(0\parallel \send{a}0)$.
 \end{itemize}
 
+\textit{\\}
+
 Un dernier problème se pose, pour traiter le cas des variables libres, c'est-à-dire des variables qui n'ont jamais été déclarées par un liant.
-Pour simplifier le opérations sur la machine, j'ai décidé d'utiliser la convention localement anonyme\cite{Chargueraud12}, consistant à dire qu'une variable liée est représentée par son indice de de Bruijn, tandis qu'une variable libre est nommée.
-La syntaxe que j'ai utilisé est donc finalement
+Pour simplifier le opérations sur la machine, j'ai décidé d'utiliser la convention localement anonyme \cite{Chargueraud12}, consistant à dire qu'une variable liée est représentée par son indice de de Bruijn, tandis qu'une variable libre est nommée.
+La syntaxe que j'ai utilisée est donc finalement
 \[P::=\begin{array}{c|c|c|c|c|c}P\parallel P & \send{a}P & a.P & i & x & \star\end{array}\]
 où $x$ désigne une variable libre.
 Par exemple, $\send{a}y\parallel a(x).x$ se réécrit en $\send{a}y \parallel a.0$.
 
-\subsection{Propriétés du calcul 0.5}
+\subsection{Propriétés du calcul}
 \label{sec-2-2}
 
-Comme le montre le troisième exemple précédent, HOcore est non-déterministe car un terme peut avoir plusieurs réductions différentes possibles en même temps.
-Il n'est cependant pas confluent, c'est-à-dire que si un processus $P$ admet deux réductions distinctes ayant pour résultat $P_1$ et $P_2$, il est possible que $P_1$ et $P_2$ ne puissent pas se réduire en un nombre quelconque d'étapes vers un même processus $Q$. C'est par exemple le cas de $\send{a}y\parallel \send{a}z\parallel a(x).x$.
+HOcore est un calcul non-déterministe car un terme peut avoir plusieurs réductions différentes possibles en même temps.
+Il n'est pas confluent, c'est-à-dire que si un processus $P$ admet deux réductions distinctes ayant pour résultat $P_1$ et $P_2$, il est possible que $P_1$ et $P_2$ ne puissent pas se réduire en un nombre quelconque d'étapes vers un même processus $Q$. C'est par exemple le cas pour $P=\send{a}y\parallel \send{a}z\parallel a(x).x$ avec $P_1 = \send{a}y \parallel z$ et $P_2 = \send{a}z \parallel y$.
 Cette propriété est l'équivalent de la notion de course critique dans un programme concurrent : deux exécutions d'un même processus peuvent ne pas avoir la même issue en fonction de l'entrelacement des sous-processus mis en parallèle.
 
 La différence principale entre HOcore et HO$\pi$ dont il est issu est l'absence d'opérateur de restriction de nom.
 En effet, de nombreux calculs de processus disposent d'un moyen plus ou moins direct de créer des nouveaux nom de canaux ou de variables, ce qui permet d'effectuer en parallèle un nombre arbitraire de tâches.
-Les opérations de ce genre sont cependant impossibles en HOcore. En particulier, le nombre de canaux différents qui peuvent exister au cours de l'exécution d'un processus est toujours majoré par le nombre de canaux initial.
+Les opérations de ce genre sont cependant impossibles en HOcore. En particulier, le nombre de canaux différents qui peuvent exister au cours de l'exécution d'un processus est toujours majoré par le nombre de canaux initiaux.
 
-Cette contrainte fait que HOcore dispose d'une expressivité moindre que la beaucoup d'autres calculs. Il reste cependant Turing-complet \cite{Lanese08}.
+Cette contrainte fait que HOcore dispose d'une expressivité moindre que beaucoup d'autres calculs. Il reste cependant Turing-complet \cite{Lanese08}.
 
-\section{Machine abstraite 5.5}
+\section{Machine abstraite}
 \label{sec-3}
-\subsection{De la machine de Krivine à HOcore 1.5}
+\subsection{De la machine de Krivine à HOcore}
 \label{sec-3-1}
-\subsubsection{Machine de Krivine 0.2}
+\subsubsection{Machine de Krivine}
 \label{sec-3-1-1}
 
-Une machine abstraite classique est la machine de Krivine, qui sert à modéliser le $\lambda$-calcul et plus particulièrement sa stratégie d'évaluation externe gauche. Je m'en suis inspiré pour construire celle pour HOcore.
+Une machine abstraite classique est la machine de Krivine, qui sert à modéliser le $\lambda$-calcul. Je m'en suis inspiré pour construire celle pour HOcore.
 Pour rappel, la syntaxe du $\lambda$-calcul en utilisant des indices de de Bruijn est la suivante :
 \[u::=\begin{array}{c|c|c}\lambda.u & u\, u & i\end{array}\]
 
 La machine de Krivine est alors définie comme un triplet formé d'un $\lambda$-terme, d'une pile $\pi$ et d'un environnement $e$.
-La pile comme l'environnement est une liste dont les éléments sont définis par récurrence comme étant des paires formée d'un $\lambda$-terme et d'un environnement.
+La pile et l'environnement sont des listes dont les éléments sont définis par récurrence comme étant des paires formée d'un $\lambda$-terme et d'un environnement.
+La pile contient les prochains termes à évaluer et l'environnement, les arguments successifs des $\lambda$-abstractions.
 
 La machine possède plusieurs réductions possibles, en fonction de la forme du $\lambda$-terme:
-
-\begin{tabular}{rclccrcl}
-	$\krivine{\lambda.u,x::\pi,e}$ &$\to$& $\krivine{u,\pi,x::e}$ 
-	& & & $\krivine{i+1,\pi,x::e}$ & $\to$ & $\krivine{i,\pi,e}$ \\
-	$\krivine{u v,\pi,e}$ & $\to$ & $\krivine{u, (v,e)::\pi,e}$ 
-	& & & $\krivine{0,\pi,(u,e')::e}$ & $\to$ & $\krivine{u,\pi,e'}$
-\end{tabular}
-
-\textit{}
+\begin{align*}
+	\krivine{u\, v,\pi,e} & \to \krivine{u, (v,e)::\pi,e}
+	& \krivine{\lambda.u,p::\pi,e} &\to \krivine{u,\pi,p::e} \\
+	\krivine{i+1,\pi,p::e} & \to \krivine{i,\pi,e}
+	& \krivine{0,\pi,(u,e')::e} & \to \krivine{u,\pi,e'}
+\end{align*}
 
 La machine de Krivine est déterministe puisqu'à un $\lambda$-terme ne peut correspondre qu'une seule réduction.
-Cela vient du fait qu'elle simule une stratégie d'évaluation particulière, l'appel par nom : dans un terme de la forme $(\lambda.u) v$, c'est d'abord $u$ qui est évalué puis $v$.
+Cela vient du fait qu'elle simule une stratégie d'évaluation particulière, l'appel par nom (ou stratégie d'évaluation externe gauche): dans un terme de la forme $(\lambda.u) v$, c'est d'abord $u$ qui est évalué puis $v$.
 Cela se justifie car le $\lambda$-calcul est confluent, et si un terme dispose d'une forme normale (c'est-à-dire s'il peut se réduire en un terme qui ne se réduit plus ensuite), alors cette stratégie d'évaluation mène à cette unique forme normale.
 
-\subsubsection{Machine abstraite pour HOcore 0.6}
+\subsubsection{Machine abstraite pour HOcore}
 \label{sec-3-1-2}
 
-HOcore n'est pas un calcul confluent, donc j'ai choisi de ne pas implémenter de stratégie d'évaluation spécifique dans la machine abstraite.
+Contrairement au $\lambda$-calcul, HOcore n'est pas un calcul confluent donc j'ai choisi de ne pas implémenter de stratégie d'évaluation spécifique dans la machine abstraite.
 Par conséquent, celle-ci est non-déterministe, puisqu'elle doit pouvoir simuler n'importe quelle réduction du processus HOcore initial.
 
-La machine est inspirée de celle de Krivine par l'utilisation d'environnements $e$, récursivement définis comme des listes de paires formées d'un processus HOcore et d'un environnement. La syntaxe de la machine est :
-\[\begin{array}{c|c|c|c|c}M::= M + M & (\send{a}P,e) & (a.P,e) & x & \star\end{array}\]
+La machine est inspirée de celle de Krivine par l'utilisation d'environnements $e$, récursivement définis comme des listes de paires formées d'un processus HOcore et d'un environnement. Le $i$-ème élément d'un environnement $e$, noté $e\block{i}$ est donc de la forme $(P,e)$. La syntaxe de la machine est :
+\[\begin{array}{c|c|c|c|c}\mathbf{M}::= \mathbf{M} + \mathbf{M} & (\send{a}P,e) & (a.P,e) & x & \star\end{array}\]
 \begin{itemize}
-	\item $+$ est le pendant de $\parallel$ pour les processus. Il est de même commutatif, associatif et admet $\star$ comme élément neutre.
-	\item $(\send{a}P,e)$ et $(a.P,e)$ sont des processus annotés d'un environnement, respectivement une émission et une réception.
-	\item $x$ désigne une variable libre.
+	\item $+$ est le pendant de $\parallel$ pour les machines. Il est de même commutatif, associatif et admet $\star$ comme élément neutre ;
+	\item $(\send{a}P,e)$ et $(a.P,e)$ sont des processus annotés d'un environnement, respectivement une émission et une réception ;
+	\item $x$ désigne une variable libre ;
 	\item $\star$ est la machine vide, qui ne peut réaliser aucune action.
 \end{itemize}
+
+\textit{}
 
 Pour pouvoir définir la transition disponible pour la machine, on utilise une traduction des processus annotés $(P,e)$ en machine, notée $\machine{(P,e)}$ et récursivement définie comme
 \begin{align*}
 \machine{(P\parallel Q,e)} &= \machine{(P,e)} + \machine{(Q,e)} &\quad
-\machine{(x,e)} &= x &\quad
 \machine{(\star,e)} &= \star \\
 \machine{(\send{a}P,e)} &= (\send{a}P,e) &\quad
-\machine{(a.P,e)} &= (a.P,e) &
+\machine{(x,e)} &= x \\
+\machine{(a.P,e)} &= (a.P,e) &\quad
 \machine{(i,e)} &= \machine{e\block{i}}
 \end{align*}
 
 La transition d'une machine est alors
-\[(\send{a}Q,e) + (a.R,f) + M \to \machine{(R, (Q,e)::f)} + M\]
+\[(\send{a}Q,e) + (a.R,f) + \mathbf{M}\ \to\ \machine{(R, (Q,e)::f)} + \mathbf{M}\]
 
 Ceci signifie que le message émis est simplement mis dans l'environnement de la réception, sauf dans le cas où la réception est une variable liée, auquel cas sa valeur est évaluée.
 
+
+\phantomsection
+\label{expl_transition}
 Cette transition n'est pas tout à fait élémentaire.
-En effet, l'évaluation récursive de $\machine{e\block{i}}$ dans le cas d'une variable n'est pas immédiate : on aurait pu définir à la place $\machine{(i,e)}' = (i,e)$ où $(i,e)$ serait une nouvelle construction possible pour la machine, et de rajouter la transition spontanée $(i,e)+M\to \machine{e\block{i}}'+M$. Les réductions possibles de cette alternative sont plus élémentaires, et on peut démontrer que toute transition de la première forme correspond à une série de réductions de la deuxième.
+En effet, l'évaluation récursive de $\machine{e\block{i}}$ dans le cas d'une variable n'est pas immédiate : on aurait pu définir à la place $\machine{(i,e)} = (i,e)$ où $(i,e)$ serait une nouvelle construction possible pour la machine, et rajouter la transition spontanée $(i,e)+\mathbf{M}\ \to\  \machine{e\block{i}}+\mathbf{M}$. Les réductions possibles de cette alternative sont plus élémentaires, et on peut démontrer que toute transition de la première forme correspond à une série de réductions de la deuxième.
 
 L'intérêt de la transition retenue par rapport à cette alternative est qu'une réduction du processus modélisé correspond exactement à une transition de la machine correspondante, ce qui simplifie grandement les preuves faites sur la machine.
 
@@ -289,22 +284,22 @@ L'intérêt de la transition retenue par rapport à cette alternative est qu'une
 \textit{\\Exemples}
 \begin{itemize}
 	\item $\star$ n'admet pas de transition.
-	\item $(\send{a}y, \empty) + (a.0, \empty) \to \machine{(0, (y,\empty)::\empty)} = y$.
-	\item $\paren{\send{a}0, \block{(x,\empty)}} + \paren{a.(1\parallel \send{b}\star), \block{(y,\empty)}} \to y + \paren{\send{b}\star, \block{\paren{x,\empty} ; \paren{y,\empty}}}$.
+	\item $(\send{a}y, \empty) + (a.0, \empty)\ \to\ \machine{(0, (y,\empty)::\empty)} = y$.
+	\item $\paren{\send{a}0, \block{(x,\empty)}} + \paren{a.(1\parallel \send{b}\star), \block{(y,\empty)}}\ \to\ y + \paren{\send{b}\star, \block{\paren{x,\empty} ; \paren{y,\empty}}}$.
 \end{itemize}
 
-\subsubsection{Bonne formation 0.2}
+\subsubsection{Bonne formation}
 \label{sec-3-1-3}
 
 L'utilisation de la convention localement anonyme permet l'existence de terme qui sont mal formés, si une variable de de Bruijn n'est pas liée. Par exemple, dans le processus $\send{a}0$, la variable $0$ est en réalité libre, et devrait donc être nommée et non pas écrite comme un indice de de Bruijn.
 
-La correction de la machine est donc soumise à la contrainte que tous ses indices de de Bruijn du processus initial se réfèrent à des liants valides, propriété dite de bonne formation. Il est intuitif, et on vérifie bien, que si $P\to Q$ et $P$ est bien formé, alors $Q$ l'est aussi.
+La correction de la machine est donc soumise à la contrainte que tous les indices de de Bruijn du processus initial se réfèrent à des liants valides, propriété dite de bonne formation. Il est intuitif, et on vérifie bien, que si $P\to Q$ et $P$ est bien formé, alors $Q$ l'est aussi.
 
-Une condition équivalente a été développée sur la machine de façon à ce que si $M\to N$ et $M$ est bien formée, alors $N$ aussi.
+Une condition équivalente a été développée sur la machine de façon à ce que si $\mathbf{M}\to \mathbf{N}$ et $\mathbf{M}$ est bien formée, alors $\mathbf{N}$ aussi.
 
-\subsection{Correction et complétude 2}
+\subsection{Correction et complétude}
 \label{sec-3-2}
-\subsubsection{Traduction 0.7}
+\subsubsection{Traduction}
 \label{sec-3-2-1}
 
 L'essentiel de la preuve consiste à montrer qu'il existe une équivalence entre les transitions de la machine et les réductions des processus.
@@ -314,35 +309,35 @@ Un processus $P$ est simplement traduit en une machine abstraite qui le représe
 $\machine{P} = \machine{(P,\empty)}$.
 
 La traduction inverse est plus complexe. Elle consiste à remplacer toutes les variables liées à une réception qui a déjà reçu un message par le message lui-même, que l'on peut trouver dans un environnement.
-Pour définir formellement cette traduction inverse, on a besoin d'utiliser un paramètre annexe, la profondeur, qui sert à compter le nombre de liant sous lequel le terme à traduire est placé.
+Pour définir formellement cette traduction inverse, on a besoin d'utiliser un paramètre annexe, la profondeur, qui sert à compter le nombre de liants sous lequel le terme à traduire est placé.
 Cette nécessité vient de l'utilisation des variables de de Bruijn.
 On définit donc la traduction partielle d'un processus annoté $(P,e)$ avec profondeur $d$, notée $\process{(P,e)}^d$, définie par
 \begin{align*}
 \process{(P\parallel Q,e)}^d &= \process{(P,e)}^d \parallel \process{(Q,e)}^d
-& \process{(x,e)}^d &= x
-&\process{(\send{a}P,e)}^d &= \send{a}{\process{(P,e)}^d} \\
-\process{(i,e)}^d &= \left\{ \begin{array}{ll}
+&\quad \process{(\star,e)}^d &= \star\\
+\process{(\send{a}P,e)}^d &= \send{a}{\process{(P,e)}^d}
+&\quad \process{(x,e)}^d &= x\\
+\process{(a.P,e)}^d &= a.\paren{\process{(P,e)}^{d+1}}
+&\quad\process{(i,e)}^d &= \left\{ \begin{array}{ll}
 i & \text{si } i<d\\
 \process{e\block{i-d}}^0 & \text{sinon}
 \end{array}\right.
-& \process{(\star,e)}^d &= \star
-& \process{(a.P,e)}^d &= a.\paren{\process{(P,e)}^{d+1}} 
 \end{align*}
 
-On peut alors définir la traduction inverse d'une machine, notée $\process{M}$, simplement par
+On peut alors définir la traduction inverse d'une machine, notée $\process{\mathbf{M}}$, simplement par
 \begin{align*}
-\process{M+N} &= \process{M} \parallel \process{N}
+\process{\mathbf{M+N}} &= \process{\mathbf{M}} \parallel \process{\mathbf{N}}
 &\quad \process{(P,e)} &= \process{(P,e)}^0
 &\quad\process{x} &= x &\quad \process{\star} &= \star
 \end{align*}
 
-Une première propriété de ces traductions que l'on a est que pour tout processus $P$ bien formé, on a $\process{\machine{P}} = P$, ce qui est attendu et donne un sens à la traduction.
+Une première propriété de ces traductions dont on dispose est que pour tout processus $P$ bien formé, on a $\process{\machine{P}} = P$, ce qui est attendu et donne un sens à la traduction.
 
-L'autre égalité, $\machine{\process{M}} = M$, est en revanche fausse dans le cas général d'une machine $M$ bien formée. En effet, tous les environnements apparaissant dans la traduction directe $\machine{P}$ sont vides, ce qui n'est pas nécessairement le cas chez la machine initiale $M$.
+L'autre égalité, $\machine{\process{\mathbf{M}}} = \mathbf{M}$, est en revanche fausse dans le cas général d'une machine $\mathbf{M}$ bien formée. En effet, tous les environnements apparaissant dans la traduction directe $\machine{P}$ sont vides, ce qui n'est pas nécessairement le cas chez la machine initiale $\mathbf{M}$.
 
 Ce phénomène est une conséquence du fait qu'on peut obtenir un même processus HOcore à travers des suites de réductions différentes en partant de termes différents. En effet, la machine garde dans ses environnements la trace des différentes communications qui ont eu lieu, c'est-à-dire des réductions successives qui se sont produites.
 
-\subsubsection{Propriétés requises 0.3}
+\subsubsection{Propriétés requises}
 \label{sec-3-2-2}
 
 Deux propriétés sont requises pour la machine : la correction et la complétude.
@@ -355,11 +350,11 @@ Ces deux propriétés se visualisent plus facilement à l'aide de diagrammes :\\
 
 \begin{tikzpicture}
 
-\node (M) {$M$};
+\node (M) {$\mathbf{M}$};
 \node (0) [left = 2cm of M] {};
 \node (P) [below = 1cm of M]{$P$};
 \node (t) [below left = 0.2cm and -0.2cm of M] {$\process{.}$};
-\node (M') [right = 0.94cm of M]{$M'$};
+\node (M') [right = 0.94cm of M]{$\mathbf{M}'$};
 \node (P') [below right = 1.4cm of M]{$P'$};
 \node (t') [below right = 0.2cm and -0.2cm of M'] {$\process{.}$};
 \node (caption) [below right = 0cm and -0.3cm of P] {Correction};
@@ -367,97 +362,96 @@ Ces deux propriétés se visualisent plus facilement à l'aide de diagrammes :\\
 \draw[->, decorate, decoration=snake] (M) -- (P);
 \draw[->] (M) -- (M');
 
-\draw[->, dotted, decorate, decoration=snake] (M') -- (P');
-\draw[->, dotted] (P) -- (P');
+\draw[->, densely dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, densely dotted] (P) -- (P');
 
 \end{tikzpicture}
 \begin{tikzpicture}
 
-\node (M) {$M$};
+\node (M) {$\mathbf{M}$};
 \node (0) [left = 2cm of M] {};
 \node (P) [below = 1cm of M]{$P$};
 \node (t) [below left = 0.2cm and -0.2cm of M] {$\process{.}$};
-\node (M') [right = 0.94cm of M]{$M'$};
-\node (P') [below right = 1.4cm of M]{$P'$};
+\node (M') [right = 0.94cm of M]{$\mathbf{M}'$};
+\node (P') [below right = 1.39cm of M]{$P'$};
 \node (t') [below right = 0.2cm and -0.2cm of M'] {$\process{.}$};
 
 \draw[->, decorate, decoration=snake] (M) -- (P);
 \draw[->] (P) -- (P');
 
-\draw[->, dotted, decorate, decoration=snake] (M') -- (P');
-\draw[->, dotted] (M) -- (M');
+\draw[->, densely dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, densely dotted] (M) -- (M');
 \node (caption) [below right = 0cm and -0.3cm of P] {Complétude};
 
 \end{tikzpicture}
 
-Sur ces diagrammes, les flèches pleines sont des quantificateurs universels, et les flèches pointillées, des quantificateurs existentiels.
+Sur ces diagrammes, les flèches pleines sont les conditions et celles en pointillées, les conséquences.
+Les flèches horizontales désignent généralement un nombre quelconque de réductions, mais ici, du fait de la transition retenue pour les machines, une transition au sein des machines correspond exactement à une réduction pour les processus.
 
-Les flèches horizontales désignent un nombre quelconque de réductions, mais l'intérêt de la transition retenue pour les machines est qu'une transition au sein des machines correspond exactement à une réduction pour les processus.
-
-\subsubsection{Résumé de la preuve 1}
+\subsubsection{Résumé de la preuve}
 \label{sec-3-2-3}
 
 La preuve de la correction et de la complétude de la machine abstraite passe par de nombreuses étapes intermédiaires, nécessaires notamment pour la manipulation correcte des indices de de Bruijn.
 Elle consiste en trois grandes étapes :
 
 \begin{enumerate}
-\item Équivalence de machines 0.3
+\item \'Equivalence de machines
 \label{sec-3-2-3-2}
 
 Raisonner directement sur une machine abstraite quelconque pour établir la correction est délicat, car les environnements peuvent être de n'importe quelle forme.
 On réduit donc le problème à l'étude de certaines machines particulières.
 
-Deux machines $M$ et $N$ sont dites équivalentes lorsque $\process{M} = \process{N}$, ce qu'on note $M\sim N$.
-Le représentant standard de la classe d'équivalence de $M$, que l'on note $\widehat{M}$, est défini comme $\widehat{M} = \machine{\process{M}}$.
+Deux machines $\mathbf{M}$ et $\mathbf{N}$ sont dites équivalentes lorsque $\process{\mathbf{M}} = \process{\mathbf{N}}$, ce qu'on note $\mathbf{M}\sim \mathbf{N}$.
+Le représentant standard de la classe d'équivalence de $\mathbf{M}$, que l'on note $\widehat{\mathbf{M}}$, est défini comme $\widehat{\mathbf{M}} = \machine{\process{\mathbf{M}}}$.
 
-C'est ce $\widehat{M}$ qui va servir à établir la correction de la machine, car tous ses environnements sont vides, ce qui le rend plus manipulable.
-Parmi les premières propriétés de $\widehat{M}$ on trouve la stabilité par $+$, c'est-à-dire $\widehat{M+N} = \widehat{M} + \widehat{N}$ et la bonne définition, soit $\widehat{\widehat{M}} = M$.
-Cette dernière propriété est d'ailleurs un simple corollaire au fait que $\process{\machine{P}} = P$, ce que l'on a déjà vu.
+C'est ce $\widehat{\mathbf{M}}$ qui va servir à établir la correction de la machine, car tous ses environnements sont vides, ce qui le rend plus manipulable.
+Parmi les premières propriétés de $\widehat{\mathbf{M}}$ on trouve la stabilité par $+$, c'est-à-dire $\widehat{\mathbf{M+N}} = \widehat{\mathbf{M}} + \widehat{\mathbf{N}}$ et la bonne définition, soit $\widehat{\widehat{\mathbf{M}}} = \widehat{\mathbf{M}}$.
+Cette dernière propriété est d'ailleurs un simple corollaire du fait que $\process{\machine{P}} = P$, ce que l'on a déjà vu.
 
-\item Lemme principal 0.3
+\item Lemme principal
 \label{sec-3-2-3-3}
 
 Le lemme principal à établir correspond à montrer la correction de la machine lors d'une unique transition, en partant d'un représentant standard.
 
-Formellement, on montre que si $M\to M'$, alors $\widehat{M}\to M''$ avec $M'\sim M''$.
+Formellement, on montre que si $\mathbf{M}\to \mathbf{M}'$, alors $\widehat{\mathbf{M}}\to \mathbf{M}''$ avec $\mathbf{M}'\sim \mathbf{M}''$.
 
-Pour conclure la preuve de la correction, il faut enfin prouver que si $\machine{P}\to M''$ alors $P\to P'$ avec $\process{M''} = P'$.
+Pour conclure la preuve de la correction, il faut enfin prouver que si $\machine{P}\to \mathbf{M}''$ alors $P\to P'$ avec $\process{\mathbf{M}''} = P'$.
 
-Ces deux lemmes principaux sont décrits par les deux diagrammes :\\
+Ces deux théorèmes sont décrits par les deux diagrammes :\\
 
 \begin{tikzpicture}
 
-\node (M) {$M$};
+\node (M) {$\mathbf{M}$};
 \node (0) [left = 2cm of M] {};
-\node (P) [below = 1cm of M]{$\widehat{M}$};
+\node (P) [below = 1cm of M]{$\widehat{\mathbf{M}}$};
 \node (t) [below left = 0.2cm and -0.2cm of M] {$\machine{\process{.}}$};
-\node (M') [right = 1.085cm of M]{$M'$};
-\node (P') [below right = 1.48cm of M]{$M''$};
+\node (M') [right = 1.085cm of M]{$\mathbf{M}'$};
+\node (P') [below right = 1.48cm of M]{$\mathbf{M}''$};
 \node (t') [below right = 0.4cm and -0.2cm of M'] {$\sim$};
 \node (1) [right = 1.5cm of t'] {et};
 
 \draw[->, decorate, decoration=snake] (M) -- (P);
 \draw[->] (M) -- (M');
 
-\draw[<->, dotted, decorate, decoration=snake] (M') -- (P');
-\draw[->, dotted] (P) -- (P');
+\draw[<->, densely dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, densely dotted] (P) -- (P');
 
 \end{tikzpicture}
 \begin{tikzpicture}
 
-\node (M) {$M$};
+\node (M) {$\mathbf{M}$};
 \node (0) [left = 2cm of M] {};
 \node (P) [below = 1cm of M]{$P$};
 \node (t) [below left = 0.2cm and -0.2cm of M] {$\machine{.}$};
-\node (M') [right = 0.94cm of M]{$M''$};
+\node (M') [right = 0.94cm of M]{$\mathbf{M}''$};
 \node (P') [below right = 1.4cm of M]{$P'$};
 \node (t') [below right = 0.2cm and -0.2cm of M'] {$\process{.}$};
 
 \draw[->, decorate, decoration=snake] (P) -- (M);
 \draw[->] (M) -- (M');
 
-\draw[->, dotted, decorate, decoration=snake] (M') -- (P');
-\draw[->, dotted] (P) -- (P');
+\draw[->, densely dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, densely dotted] (P) -- (P');
 
 \end{tikzpicture}
 
@@ -465,13 +459,13 @@ Mis bout à bout, on obtient donc la forme générale de la preuve :\\
 
 \begin{tikzpicture}
 
-\node (M) {$M$};
+\node (M) {$\mathbf{M}$};
 \node (0) [left = 3.5cm of M] {};
 \node (P) [below = 3cm of M]{$P$};
-\node (N) [below right = 1cm of M] {$\widehat{M}$};
+\node (N) [below right = 1cm of M] {$\widehat{\mathbf{M}}$};
 \node (p) [below left = 1.2cm and -0.2cm of M] {$\process{.}$};
-\node (M') [right = 4.94cm of M]{$M'$};
-\node (M'')[right = 2cm of N] {$M''$};
+\node (M') [right = 4.94cm of M]{$\mathbf{M}'$};
+\node (M'')[right = 2cm of N] {$\mathbf{M}''$};
 \node (P') [below = 2.965cm of M']{$P'$};
 \node (p') [below right = 1.2cm and -0.2cm of M'] {$\process{.}$};
 
@@ -481,19 +475,19 @@ Mis bout à bout, on obtient donc la forme générale de la preuve :\\
 \draw[->, decorate, decoration=snake] (M) -- (P);
 \draw[->] (M) -- (M');
 
-\draw[->, dashed] (N) -- (M'');
+\draw[->, densely dashed] (N) -- (M'');
 
-\draw[->, dashed, decorate, decoration=snake] (P) -- (N);
-\draw[->, dashed, decorate, decoration=snake] (M'') -- (P');
+\draw[->, densely dashed, decorate, decoration=snake] (P) -- (N);
+\draw[->, densely dashed, decorate, decoration=snake] (M'') -- (P');
 
-\draw[->, dotted, decorate, decoration=snake] (M') -- (P');
-\draw[->, dotted] (P) -- (P');
+\draw[->, densely dotted, decorate, decoration=snake] (M') -- (P');
+\draw[->, densely dotted] (P) -- (P');
 
 \end{tikzpicture}
 
 \textit{}
 
-\item De la correction à la complétude 0.2
+\item De la correction à la complétude
 \label{sec-3-2-3-4}
 
 La complétude se déduit d'une propriété de correction un peu plus forte que celle que l'on vient de voir.
@@ -501,67 +495,214 @@ On peut en effet étiqueter les transitions d'un processus : si $P$ se réduit e
 On étiquette alors sa transition par le couple émission / réception :
 $P\xrightarrow{(\send{a}S, a.R)} P'$.
 
-On peut de même étiqueter les transitions au sein des machines : pour $M = (\send{a}Q, e) + (a.R, f) + N \to M'$, on note
-$M \xrightarrow{\paren{ \process{(\send{a}Q, e)}, \process{(a.R,f)}} } M'$.
+On peut de même étiqueter les transitions au sein des machines : pour $\mathbf{M} = (\send{a}Q, e) + (a.R, f) + \mathbf{N} \to \mathbf{M}'$, on note
+$\mathbf{M} \xrightarrow{\paren{ \process{(\send{a}Q, e)}, \process{(a.R,f)}} } \mathbf{M}'$.
 
 On a alors la nouvelle propriété de correction :
-Si $M\xrightarrow{t} M'$ alors $\process{M}\xrightarrow{t} P'$ avec $\process{M'} = P'$.
+Si $\mathbf{M}\xrightarrow{t} \mathbf{M}'$ alors $\process{\mathbf{M}}\xrightarrow{t} P'$ avec $\process{\mathbf{M}'} = P'$.
 
-On peut alors prouver la complétude en remarquant que si $P\xrightarrow{t}P'$, alors, du fait de la structure de $P$, pour tout $M$ tel que $\process{M} = P$, $M$ admet une transition étiquetée par $t$ vers un $M'$.
-Or, par correction, $P$ admet alors une transition étiquetée par $t$ vers un $P''$ et $\process{M'} = P''$.
-Enfin, comme $P\xrightarrow{t} P'$ et $P\xrightarrow{t} P''$, $P' = P''$ donc $\process{M'} = P'$.
+On peut alors prouver la complétude en remarquant que si $P\xrightarrow{t}P'$, alors, du fait de la structure de $P$, pour tout $\mathbf{M}$ tel que $\process{\mathbf{M}} = P$, $\mathbf{M}$ admet une transition étiquetée par $t$ vers un $\mathbf{M}'$.
+Or, par correction, $P$ admet alors une transition étiquetée par $t$ vers un $P''$ et $\process{\mathbf{M}'} = P''$.
+Enfin, comme $P\xrightarrow{t} P'$ et $P\xrightarrow{t} P''$, on obtient $P' = P''$ donc $\process{\mathbf{M}'} = P'$.
 
 \end{enumerate}
 
 
-\section{Implémentation 3}
+\section{Implémentation}
 \label{sec-4}
-\subsection{En OCaml 1.5}
+
+L'implémentation de la machine abstraite permet de visualiser l'exécution de la machine sur un processus donné.
+\'Etant donné sa nature non-déterministe, j'ai implémenté plusieurs versions de la machine abstraite, nécessitant ou non un dialogue avec l'utilisateur pour le choix des réductions.
+
+\subsection{En OCaml}
 \label{sec-4-1}
-\subsubsection{Interpréteur 1}
+\subsubsection{Interpréteur}
 \label{sec-4-1-1}
-Toutes les réductions / pas-à-pas.
-Problème d'optimisation.
+
+La première étape de la réalisation d'une machine abstraite pour HOcore est la compréhension du calcul lui-même.
+J'ai donc commencé par créer un interpréteur pour HOcore, écrit en OCaml.
+
+La première version, très naïve, modélise les processus comme des listes d'atomes, les atomes pouvant être des émissions, des réceptions ou des variables.
+Cette version convient pour une utilisation pas-à-pas, où la communication à choisir entre une émission et une réception est demandée à l'utilisateur à chaque réduction.
+
+Elle n'est cependant pas suffisamment efficace pour une utilisation cherchant à explorer toutes les réductions possibles d'un processus initial donné.
+Dans ce cadre, j'ai amélioré l'interpréteur en raffinant le modèle de HOcore choisi, de façon à ce que l'exploration d'un terme possédant un nombre non borné de réductions prenne un temps raisonnable, même pour plusieurs milliers de réductions au maximum.
+
 \begin{enumerate}
-\item Version naïve 0.2
+\item Regroupement par canal
 \label{sec-4-1-1-1}
-\item Regroupement par canal 0.2
+
+La première amélioration consiste à regrouper les émissions et les réceptions en fonction du canal sur lequel elles ont lieu.
+En utilisant des variables nommées, on obtient donc la structure suivante pour les processus :
+\begin{verbatim}
+module SMap  = Map.Make(String)
+type process = Proc of ((send list * recv list) SMap.t) * var list
+and send = process
+and recv = var * process
+and var  = string
+\end{verbatim}
+
+L'intérêt de ce regroupement est de pouvoir identifier facilement les communications possibles, et de ne pas prendre en compte les canaux sur lesquels il n'y a pas de communication.
+
+\item Compilation vers une fonction
 \label{sec-4-1-1-2}
-\item Compilation vers une fonction 0.3
+
+Une seconde amélioration possible consiste à transformer les réceptions en fonctions de la forme
+\verb|type recv = process -> process|, les autres types étant conservés par ailleurs.
+
+En effet, la communication se fait alors très simplement en appliquant la réception (qui est une fonction) à l'émission (qui est un processus).
+Cependant, la création de telles fonctions ne peut pas se faire au sein du même programme qui fait l'analyse syntaxique du processus HOcore entré, car les différentes réceptions sont mutuellement récursives.
+Par exemple, la réception $a(x).b(y).x$ devra être transformé à terme en un objet dont la structure ressemblera à
+\verb|fun x -> fun y -> x| qui ne peut pas être créée lors d'un parcours de l'arbre de syntaxe abstrait du processus.
+
+La solution consiste donc à compiler le processus HOcore entré en un code OCaml contenant un objet de type \verb|process|, qui sera ensuite compilé puis exécuté pour rechercher toutes ses réductions.
+On profite alors aussi de l'efficacité du compilateur pour que les fonctions constituant les réceptions soient optimisées.
+
+L'implémentation de cette méthode n'a cependant pas montré une amélioration significative des performances de l'interpréteur, sans doute à cause de la difficulté pour le compilateur d'optimiser les fonctions à travers l'appel au module \verb|SMap|.
+
+\item Structure de multi-ensemble
 \label{sec-4-1-1-3}
-\item Structure de multi-ensemble 0.3
-\label{sec-4-1-1-4}
+
+Une dernière amélioration importante de l'interpréteur consiste à ne plus utiliser des listes, mais des multi-ensembles pour identifier plus facilement les processus identiques.
+L'intérêt de cet ajout réside dans l'exploration du graphe des réductions possibles, où l'on évite alors d'effectuer de nombreuses fois la même réduction.
+Cela requiert cependant l'utilisation de modules mutuellement récursifs pour pouvoir continuer à utiliser le foncteur \verb|Map.Make|.
+
+Les performances sont effectivement nettement accrues par cet ajout.
+
 \end{enumerate}
-\subsubsection{Machine abstraite 0.5}
+\subsubsection{Machine abstraite}
 \label{sec-4-1-2}
-Module mutuellement récursifs pour les environnements.
-\subsection{En HOcore 1.5}
+
+L'implémentation de la machine abstraite se fait par-dessus celle de l'interpréteur.
+Il suffit d'y ajouter les types suivants :
+\begin{verbatim}
+type 'a annot = 'a * env
+and env = Env of process annot list
+type machine = ((send annot) list * (recv annot) list) SMap.t * var list
+\end{verbatim}
+
+Les transitions de la machine se font alors comme définies, par insertion de l'émission dans l'environnement de la réception et évaluation du tout.
+
+\subsection{En HOcore}
 \label{sec-4-2}
-\subsubsection{Motivations 0.5}
+\subsubsection{Motivations}
 \label{sec-4-2-1}
-Expressivité du langage.
-Compréhension de HOcore et de la machine.
-\subsubsection{Éléments de programmation 1}
+
+Afin d'avoir une autre perspective sur le calcul, j'ai décidé d'implémenter la machine abstraite en HOcore.
+
+L'intérêt d'une telle démarche est avant tout de mieux comprendre ce calcul. Plus spécifiquement, je souhaitais voir comment manipuler des éléments de programmation élémentaires comme les boucles ou les nombres dans HOcore, qui est Turing-complet et devait donc pouvoir les exprimer.
+Cela permet par ailleurs de donner un aperçu de l'expressivité du langage, et en particulier de la façon d'échapper à la contrainte de n'utiliser qu'un nombre fixé de canaux, ainsi que la gestion du non-déterminisme.
+
+Le programme à implémenter, en l'occurrence un interpréteur pour la machine abstraite, est suffisamment compliqué pour permettre d'explorer en détail ces aspects, mais reste réalisable dans le cadre très contraint de la programmation en HOcore.
+Enfin, cette implémentation m'a obligé à beaucoup simplifier la machine par rapport à ce qu'elle était à l'origine, ce qui a permis en retour de clarifier les preuves et rendre la machine sans doute mieux adaptable à HO$\pi$.
+
+\subsubsection{\'Eléments de programmation}
 \label{sec-4-2-2}
+
+Voici un aperçu des différents éléments de programmation en HOcore que j'ai développés, et qui m'ont été très utiles pour cette implémentation.
+
 \begin{enumerate}
-\item Nombres entiers 0.3
+\item Entiers naturels
 \label{sec-4-2-2-1}
-\item Listes 0.2
+
+Les entiers naturels sont représentés en HOcore d'une façon assez similaire à leur représentation en $\lambda$-calcul par les entiers de \bsc{Church}.
+En effet, on représente un nombre $n$ comme une réception sur le canal \verb|repeat|, qui attend un processus et le répète $n$ fois, puis envoie le signal \verb|zero<*>| pour signaler la fin de son exécution.
+On définit ainsi, dans la syntaxe du préprocesseur C :
+\begin{verbatim}
+#define ZERO       (repeat.zero<*>)
+#define SUCC(n)    (repeat(P).(P || ACK_rep.(repeat<P> || n)))
+\end{verbatim}
+
+La convention choisie ici est que le processus \verb|P| doit envoyer à la fin de son exécution un signal sur le canal \verb|ACK_rep|.
+
+Parmi les opérations élémentaires, on peut ainsi définir l'addition par exemple :
+\begin{verbatim}
+#define ADD(n,m)   temp<n> || m || zero.temp(x).RET_add<x> ||       \
+                   repeat< temp(x).(temp<SUCC(x)> || ACK_rep<*>) >
+\end{verbatim}
+
+Le résultat de l'opération peut être obtenu sur le canal \verb|RET_add|.
+
+\item Listes
 \label{sec-4-2-2-2}
-\item Booléens 0.2
+
+Les listes chaînées ont une représentation intuitive, la tête de la liste étant dans le canal \verb|hd| et la queue, dans le canal \verb|tl|.
+On garde dans \verb|len| la taille de la liste, afin de pouvoir la parcourir plus simplement :
+\begin{verbatim}
+#define NIL        hd<*> || tl<*> || len<ZERO>
+#define push(x,l)  (l || hd.tl.len(n).(RET_push<hd<x> || tl<l> ||   \
+                   len<SUCC(n)>>))
+\end{verbatim}
+
+L'accès au \verb|i|\ieme\ élément de la liste \verb|l| se fait alors par :
+\begin{verbatim}
+#define nth(i,l)  l || i || repeat<hd.len.tl(s).(s || ACK_rep<*>)>  \
+               || (zero.tl.len.hd(x).RET_nth<x>)
+\end{verbatim}
+
+\item Booléens
 \label{sec-4-2-2-3}
-\item Boucles 0.3
+
+Les booléens sont représentés de la façon suivante :
+\begin{verbatim}
+#define TRUE      (false.true(x).x)
+#define FALSE     (true.false(x).x)
+\end{verbatim}
+
+Une conditionnelle de la forme "\emph{if} \verb|e| \emph{then} \verb|x| \emph{else} \verb|y|" où \verb|e| est un booléen s'écrit alors :
+\begin{verbatim}
+e || true<x> || false<y>
+\end{verbatim}
+
+On peut remarquer que cette structure est en fait très adaptée à un raisonnement par cas avec un nombre quelconque de cas, en remplaçant \verb|true| et \verb|false| par \verb|case_1|, \verb|case_2|, ...,  \verb|case_n| avec un pseudo-booléen de la forme
+\verb|(case_1. ... .case_{i-1}.case_{i+1}. ... .case_n.case_i(x).x)|.
+
+\item Boucles
 \label{sec-4-2-2-4}
+
+Les boucles enfin s'écrivent par analogie avec le terme $\Omega$ vu plus haut.
+Une boucle de la forme "\emph{while} \verb|e| \emph{do} \verb|x|" où \verb|x| se termine par une émission sur \verb|ACK_loop| s'écrit :
+\begin{verbatim}
+INIT_loop< loop(o).(e || false<ACK_endloop<*>>
+                      || true< x || ACK_loop.(o || loop<o>) >)
+         > ||
+INIT_loop(o).(o || loop<o>)
+\end{verbatim}
+Cette boucle se terminera alors par une émission sur \verb|ACK_endloop|.
+
 \end{enumerate}
 
 
-\section{Mise en perspective et conclusion 1.5 (dont biblio)}
+\section{Développements possibles}
 \label{sec-5}
-Formalisation Coq : preuves très détaillées.
-Bisimulation : difficultés.
-Premier pas vers HOpi (ajout de restriction de noms), puis ajout de localités.
-Intérêt : rédaction de preuve, découverte de la concurrence.
 
+Ce travail pourrait être étendu de plusieurs façons.
+
+Une première consisterait en une formalisation de la preuve, en Coq par exemple. J'ai travaillé la preuve de façon à ce qu'elle soit le plus détaillé possible, ce qui est la première étape de cette formalisation
+
+Par ailleurs, une simplification possible de la machine consisterait en une division de la transition en sous-transitions plus élémentaires, comme expliqué en \ref{expl_transition}.
+Les preuves de correction et complétude avec cette alternative peuvent se déduire de celles faites avec la transition retenue, donc l'essentiel du travail est déjà fait. Cela rendrait par ailleurs la machine plus flexible, et peut-être plus adaptée pour représenter des processus en cours d'exécution.
+
+Sur un autre plan, il serait intéressant de définir une notion de bisimulation pour la machine abstraite qui corresponde à celle sur HOcore.
+Les bisimulations sont des relations d'équivalences adaptées à la comparaison de processus distribués \cite{Pous08}.
+HOcore dispose de plusieurs propriétés très fortes par rapport aux bisimulations, notamment la décidabilité de celles-ci et leur équivalence avec la congruence barbue, une autre relation de comparaison importante \cite{Escarra15}.
+La conception d'une notion de bisimulation simple sur la machine abstraite qui corresponde à celle des processus n'est cependant pas immédiate à cause des environnements de la machine qui n'ont pas de contrepartie dans le processus HOcore.
+
+\section{Conclusion}
+
+Pour conclure, ce stage m'a permis de découvrir de l'intérieur le milieu de la recherche théorique, ce qui a constitué une expérience très intéressante.
+J'ai ainsi eu l'occasion de concevoir une machine abstraite pour un calcul de processus d'ordre supérieur, chose qui n'apparaît quasiment nulle part dans la littérature en tant que telle, ce qui m'a donc donné un aperçu assez significatif des difficultés mais aussi de l'intérêt qu'il y a dans l'exploration d'une branche encore peu exploitée de la recherche.
+
+Ce stage fut aussi pour moi l'occasion de découvrir la programmation concurrente, même si le cadre très restreint de HOcore est loin d'être suffisant pour en appréhender toutes ses spécificités.
+La programmation en HOcore reste une expérience tout à fait instructive et m'a permis de mieux comprendre en retour certaines constructions utilisées en $\lambda$-calcul.
+
+Enfin, j'ai beaucoup apprécié de devoir établir entièrement la preuve de la correction de la machine abstraite à partir de rien, faute d'existence d'autres machines abstraites suffisamment proches sur lesquels de telles preuves aient été faites.
+Cela m'a fait comprendre comment prévoir le plan général d'une preuve, et notamment l'intérêt d'adapter les définitions intermédiaires aux lemmes correspondants, ce qui permet de clarifier parfois considérablement le cheminement de la démonstration.
+
+La suite logique de ce travail consiste désormais en une généralisation de la machine abstraite à HO$\pi$, en ajoutant les restrictions de nom et en adaptant la machine de façon adéquate.
+Cela pourrait encore s'étendre en ajoutant une notion de localité afin de simuler la distribution physique des opérations au sein d'un réseau réel.
+
+\textit{\\}
 
 \bibliographystyle{plain}
 \bibliography{rapport}
